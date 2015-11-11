@@ -10,6 +10,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.Vector;
 
 import com.chunkserver.ChunkServer;
 
@@ -27,6 +28,7 @@ public class ClientFS {
 		DirNotEmpty, //Returned when a non-empty directory is deleted
 		SrcDirNotExistent, // Returned when source directory does not exist
 		DestDirExists, // Returned when a destination directory exists
+		DestDirNotExistent, //Return when destination directory doesn't exist
 		FileExists, // Returned when a file exists
 		FileDoesNotExist, // Returns when a file does not exist
 		BadHandle, // Returned when the handle for an open file is not valid
@@ -42,7 +44,7 @@ public class ClientFS {
 	{
 		if (ClientSocket != null) return; //The client is already connected
 		try {
-			BufferedReader binput = new BufferedReader(new FileReader(TFSMaster.ClientMasterConfigFile));
+			BufferedReader binput = new BufferedReader(new FileReader(TFSMaster.MasterConfigFile));
 			String port = binput.readLine();
 			port = port.substring( port.indexOf(':')+1 );
 			ServerPort = Integer.parseInt(port);
@@ -110,6 +112,37 @@ public class ClientFS {
 	 * Example usage: DeleteDir("/Shahram/CSCI485", "Lecture1")
 	 */
 	public FSReturnVals DeleteDir(String src, String dirname) {
+		
+		try {
+			WriteOutput.writeObject("DeleteDir");//tell the master client wants to delete directory
+			WriteOutput.flush();
+			
+			WriteOutput.writeObject(src);//send the client the src directory name
+			WriteOutput.flush();
+			
+			//if the src directory doesn't exist return that error
+			String response = (String) ReadInput.readObject();
+			if (response.equals("does_not_exist")) return FSReturnVals.SrcDirNotExistent;
+			
+			WriteOutput.writeObject(dirname);
+			WriteOutput.flush();
+			
+			//if the destination to be deleted doesn't exist return that error
+			response = (String) ReadInput.readObject();
+			if(response.equals("dest_dir_does_not_exist")) return FSReturnVals.DestDirNotExistent;
+			
+			//get response from server for successful delete
+			response = (String) ReadInput.readObject();
+			if (response.equals("success")) return FSReturnVals.Success;
+			else if (response.equals("success_dir_not_empty")) return FSReturnVals.DirNotEmpty;
+
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
 		
 		return null;
 	}
@@ -183,10 +216,11 @@ public class ClientFS {
 			WriteOutput.flush();
 			
 			//load the list of chunks into filehandle object
-			String[] chunksOfFile = (String[]) ReadInput.readObject();
+			Vector<String> chunksOfFile = (Vector<String>) ReadInput.readObject();
 			ofh.setHandles(chunksOfFile);
 			
-			HashMap<String,String> locationsOfChunks = (HashMap<String, String>) ReadInput.readObject();
+			//load the HashMap of chunkhandles to list of servers w/replicas
+			HashMap<String,Vector<String>> locationsOfChunks = (HashMap<String, Vector<String>>) ReadInput.readObject();
 			ofh.setLocations(locationsOfChunks);
 			
 		} catch (IOException e) {

@@ -7,8 +7,8 @@ import java.util.Vector;
 public class FileHandle {
 	
 	String fileName;
-	String[] chunkHandles; //array of all chunk handles that constitute the file
-	HashMap<String, String> chunksToLocations;
+	Vector<String> chunkHandles; //array of all chunk handles that constitute the file
+	HashMap<String, Vector<String>> chunksToLocations;
 	
 	public FileHandle(){}
 	
@@ -16,13 +16,13 @@ public class FileHandle {
 	{
 		this.fileName = name;
 	}
-	public void setHandles(String[] handles)
+	public void setHandles(Vector<String> chunksOfFile)
 	{
-		this.chunkHandles = handles;
+		this.chunkHandles = chunksOfFile;
 	}
-	public void setLocations(HashMap<String,String> chunksAndLocations)
+	public void setLocations(HashMap<String, Vector<String>> locationsOfChunks)
 	{
-		this.chunksToLocations = chunksAndLocations;
+		this.chunksToLocations = locationsOfChunks;
 	}
 	
 	
