@@ -120,6 +120,8 @@ public class Client implements ClientInterface {
 			WriteOutput.write(CHinBytes);
 			WriteOutput.flush();
 			
+			int append_offset = Client.ReadIntFromInputStream("Client", ReadInput); //must be here because of append
+			
 			int result =  Client.ReadIntFromInputStream("Client", ReadInput);
 			if (result == ChunkServer.FALSE) return false;
 			return true;
