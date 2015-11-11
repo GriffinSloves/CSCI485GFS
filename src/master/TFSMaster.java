@@ -387,10 +387,10 @@ public class TFSMaster{
 			namespace.add(srcDirectory+dirname+"/");
 			System.out.println("Added: "+srcDirectory+dirname+" to namespace");
 			Iterator it = namespace.iterator();
-			while (it.hasNext())
+			/*while (it.hasNext())
 			{
 				System.out.print(it.next()+", ");
-			}
+			}*/
 			//send confirmation
 			oos.writeObject("success");
 			oos.flush();
