@@ -274,7 +274,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	
 
 	
-	public synchronized void ObtainLease(String ChunkHandle)
+/*	public synchronized void ObtainLease(String ChunkHandle)
 	{
 		//Ask master to obtain lease on ChunkHandle
 		byte [] payload = ChunkHandle.getBytes();
@@ -311,7 +311,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			}
 		}
 		return;
-	}
+	}*/
 	
 	public synchronized void RenewLease(Lease lease)
 	{
@@ -320,7 +320,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		byte [] payload = ChunkHandle.getBytes();
 		try
 		{
-			int code = 203;
+			int code = 202;
 			WriteOutput.writeInt(code);
 			WriteOutput.writeInt(payload.length);
 			WriteOutput.write(payload);
@@ -329,7 +329,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			int retVal = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
 			if(retVal == TRUE)
 			{
-				lease.updateLease();
+				lease.updateLeaseCS();
 			}
 			else
 			{

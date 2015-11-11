@@ -22,6 +22,7 @@ import java.util.Vector;
 
 
 import com.chunkserver.ChunkServer;
+import com.chunkserver.Lease;
 import com.client.FileHandle;
 
 public class TFSMaster{
@@ -33,6 +34,9 @@ public class TFSMaster{
 	public static HashSet<String> namespace; //maps directory paths to IP address of chunk servers
 	public HashMap<String, Vector<String>> filesToChunkHandles; // maps which chunks constitute a file
 	public HashMap<String, Vector<String>> chunkHandlesToServers; //maps chunk handles to locations of their replicas(CS IP addresses)
+	public HashMap<String, Lease> ChunkLeaseMap;
+	public HashMap<Lease, String> LeaseServerMap;
+	
 	
 	public static final String nameSpaceFile = "namespace.txt";
 	public static final String filesToChunkHandlesFile = "filesToChunkHandles.txt";
@@ -278,6 +282,39 @@ public class TFSMaster{
 	public void renameFromLog(){}
 	public void deleteFilefromLog(){}
 	public void createFileFromLog(){}
+	
+	//Returns the handles which have been deleted
+	public Vector<String> updateChunkLocations(String IPAddress, String [] ChunkHandles)
+		{
+			Vector<String> deletedChunks = new Vector<String>();
+			for(int i = 0; i < ChunkHandles.length; i++)
+			{
+				
+				Vector<String> ServerVector = chunkHandlesToServers.get(ChunkHandles[i]);
+				if(!ServerVector.contains(IPAddress))
+				{
+					ServerVector.add(IPAddress);
+				}
+				if(filesThatHaveBeenDeleted.contains(ChunkHandles[i]))
+				{
+					deletedChunks.add(ChunkHandles[i]);
+				}
+			}
+			return deletedChunks;
+		}
+		
+		public boolean renewLease(String IPAddress, String ChunkHandle)
+		{
+			Lease lease = ChunkLeaseMap.get(ChunkHandle);
+			if(IPAddress == LeaseServerMap.get(lease))
+			{
+				lease.updateLeaseMaster();
+				return true;
+			}
+			
+			return false;
+		}
+	
 	public static void main(String[] args){
 		TFSMaster master = new TFSMaster();
 	}

@@ -27,9 +27,13 @@ public class Lease {
 	{
 		return chunkHandle;
 	}
-	
-	public void updateLease()
+	public void updateLeaseMaster()
 	{
-		timeToExpire = System.currentTimeMillis() + 3000;
+		timeToExpire = System.currentTimeMillis() + 3600;
+	}
+	
+	public void updateLeaseCS()
+	{
+		timeToExpire = System.currentTimeMillis() + 3300;
 	}
 }

@@ -70,7 +70,14 @@ public class ChunkServerInstance extends Thread
 					size = Client.ReadIntFromInputStream("Master", ReadInput);
 					byteArray = Client.RecvPayload("Master", ReadInput, size);
 					ChunkHandle = new String(byteArray);
-					master.renewLease(ChunkHandle);
+					if(master.renewLease(IPAddress, ChunkHandle))
+					{
+						WriteOutput.writeInt(1);
+					}
+					else
+					{
+						WriteOutput.writeInt(0);
+					}
 					break;
 				}
 			}
