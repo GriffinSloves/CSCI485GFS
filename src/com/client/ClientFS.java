@@ -48,12 +48,11 @@ public class ClientFS {
 			String port = binput.readLine();
 			port = port.substring( port.indexOf(':')+1 );
 			ServerPort = Integer.parseInt(port);
-			
 			ClientSocket = new Socket("127.0.0.1", ServerPort);//should client be reading from config?
 			WriteOutput = new ObjectOutputStream(ClientSocket.getOutputStream());
 			ReadInput = new ObjectInputStream(ClientSocket.getInputStream());
 		}catch (FileNotFoundException e) {
-			System.out.println("Error (Client), the config file "+ ChunkServer.ClientConfigFile +" containing the port of the ChunkServer is missing.");
+			System.out.println("Error (Client), the config file "+ TFSMaster.MasterConfigFile +" containing the port of the ChunkServer is missing.");
 		}catch (IOException e) {
 			System.out.println("Can't find file.");
 		}
@@ -72,6 +71,7 @@ public class ClientFS {
 		
 		try {
 			//tell the master to create directory
+			
 			WriteOutput.writeObject("CreateDir");
 			WriteOutput.flush();
 			

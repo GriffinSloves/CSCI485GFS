@@ -27,7 +27,7 @@ import com.client.FileHandle;
 public class TFSMaster{
 	
 	public final static String MasterConfigFile = "MasterConfig.txt";
-	public static String currentLogFile;
+	public static String currentLogFile = "log1.txt";
 	public static Vector<String> filesThatHaveBeenDeleted;
 	
 	public static HashSet<String> namespace; //maps directory paths to IP address of chunk servers
@@ -49,7 +49,7 @@ public class TFSMaster{
 		
 		ServerSocket ss = null;
 		try{
-			ss = new ServerSocket(0);//find open socket
+			ss = new ServerSocket(43317);//find open socket
 			while (true)
 			{
 				Socket s = ss.accept();
@@ -94,7 +94,7 @@ public class TFSMaster{
 		try{
 				fr = new FileReader(filesToChunkHandlesFile);
 				br = new BufferedReader(fr);
-					
+				
 				while(br.readLine() != null)
 				{
 					StringTokenizer str = new StringTokenizer(br.readLine(),":");//read each entry from file
@@ -301,8 +301,8 @@ public class TFSMaster{
 			while (true)//process requests
 			{
 				try {
-					
 					String command = (String) ois.readObject();
+					
 					if (command.equals("CreateDir"))
 					{
 						createDir();
@@ -338,7 +338,6 @@ public class TFSMaster{
 					e.printStackTrace();
 				}
 			}
-			
 		}
 		public void createDir() throws IOException, ClassNotFoundException
 		{
@@ -370,7 +369,10 @@ public class TFSMaster{
 			}
 			
 			//append this create operation to the logfile
-			if(master.currentLogFile == null) System.out.println("Cannot append to log, current log == null");
+			if(master.currentLogFile == null) {
+				System.out.println("Cannot append to log, current log == null");
+				
+			}
 			FileOutputStream fos = new FileOutputStream(master.currentLogFile);
 			PrintWriter pw = new PrintWriter(fos); 
 			pw.println("createDir:"+srcDirectory+"/"+dirname);//create log record of create operation
