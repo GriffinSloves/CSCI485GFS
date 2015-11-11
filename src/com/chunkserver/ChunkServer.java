@@ -13,6 +13,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 //import java.util.Arrays;
 import java.util.HashMap;
@@ -57,7 +58,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	
 	private HashMap<String, Lease> LeaseMap;
 	private HashMap<String, String[]> ChunkReplicaMap;
-	private HashMap<String, RID[]> ChunkRIDMap;
+	private HashMap<String, ArrayList<RID>> ChunkRIDMap;
 	
 	private ServerSocket ss;
 	private Socket MasterConnection;
@@ -165,6 +166,8 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	 */
 	public String createChunk() {
 		counter++;
+		ArrayList<RID> ridArray = new ArrayList<RID>();
+		ChunkRIDMap.put(String.valueOf(counter), ridArray);
 		return String.valueOf(counter);
 	}
 	
@@ -179,6 +182,15 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			raf.seek(offset);
 			raf.write(payload, 0, payload.length);
 			raf.close();
+			
+			//Create record
+			RID rid = new RID();
+			rid.setOffset(offset);
+			rid.setChunkHandle(ChunkHandle);
+			rid.setSize(payload.length);
+			ArrayList<RID> ridArray = ChunkRIDMap.get(ChunkHandle);
+			ridArray.add(rid);
+			ChunkRIDMap.put(ChunkHandle, ridArray);
 			return true;
 		} catch (IOException ex) {
 			ex.printStackTrace();

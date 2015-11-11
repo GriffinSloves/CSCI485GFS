@@ -25,5 +25,13 @@ public class RID {
 	{
 		this.chunkhandle  =chunkhandle;
 	}
-
+	public void setSize(int size)
+	{
+		recordSize = size;
+	}
+	
+	public int getSize()
+	{
+		return recordSize;
+	}
 }
