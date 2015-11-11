@@ -125,6 +125,7 @@ public class ClientFS {
 			
 			//if the src directory doesn't exist, return the error
 			String response = (String) ReadInput.readObject();
+			//System.out.println("DeleteResponse on CFS: " + response);
 			if (response.equals("does_not_exist")) return FSReturnVals.SrcDirNotExistent;
 			
 			//write the target directory name to master so it can update the namespace
@@ -133,10 +134,12 @@ public class ClientFS {
 			
 			//check if directory already exists with that name
 			response = (String) ReadInput.readObject();
+			//System.out.println("DeleteResponse on CFS: " + response);
 			if (response.equals("dest_dir_does_not_exist")) return FSReturnVals.DestDirNotExistent;
 			
 			//get confirmation that the directory was deleted at the master namespace level
 			response = (String) ReadInput.readObject();
+			//System.out.println("DeleteResponse on CFS: " + response);
 			if (response.equals("success")) return FSReturnVals.Success;
 			else if (response.equals("success_dir_not_empty")) return FSReturnVals.DirNotEmpty;
 			

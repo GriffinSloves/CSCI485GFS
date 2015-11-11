@@ -41,7 +41,6 @@ public class UnitTest1 {
 		}
 		
 		String[] ret1 = cfs.ListDir("/" + dir1);
-		System.out.println(ret1 == null);
 		boolean compare1 = compareArrays(gen1, ret1);
 		if(compare1 == false){
 			System.out.println("Unit test 1 result: fail!");

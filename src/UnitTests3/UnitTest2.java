@@ -31,6 +31,7 @@ public class UnitTest2 {
 			System.out.println("Unit test 2 result: fail! - 1");
     		return;
 		}
+		System.out.println("Got Thru UT1");
 		
 		String dir2 = "Ghandeharizadeh";
 		String lastSec = "/" + dir2;
@@ -45,6 +46,8 @@ public class UnitTest2 {
 			System.out.println("Unit test 2 result: fail! - 2");
     		return;
 		}
+		System.out.println("Got Thru UT2");
+		
 		fsrv = cfs.DeleteDir("/", dir1);
 		if(fsrv == FSReturnVals.DirNotEmpty){
 			System.out.println("Good!  Detected " + dir1 + " exists.");
@@ -52,6 +55,8 @@ public class UnitTest2 {
 			System.out.println("Unit test 2 result: fail! - 3");
     		return;
 		}
+		
+		System.out.println("Got Thru UT3");
 		
 		fsrv = cfs.DeleteDir("/" + dir2 + "/1/", "2");
 		if(fsrv == FSReturnVals.DirNotEmpty){
@@ -61,6 +66,7 @@ public class UnitTest2 {
     		return;
 		}
 		
+		System.out.println("Got Thru UT4");
 		
 		for(int i = 1; i < N; i++){
 			fsrv = cfs.RenameDir("/" + dir1 + "/" + i, "/" + dir1 + "/" + i + "i");

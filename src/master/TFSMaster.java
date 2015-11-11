@@ -70,14 +70,14 @@ public class TFSMaster{
 		try {
 			fr = new FileReader(nameSpaceFile);
 			br = new BufferedReader(fr);
-			//WHY?? br.readline reading first input
+			
 			String temp = br.readLine();
 			while(temp != null){
 				namespace.add(temp);//add each entry
-				System.out.println("Constructor added: "+temp);
+				//System.out.println("Constructor added: "+temp);
 				temp = br.readLine();//read each entry from file
 			}
-			System.out.println("After initialization from file namespace size: "+namespace.size());
+			//System.out.println("After initialization from file namespace size: "+namespace.size());
 		} catch (FileNotFoundException e) {
 			System.out.print("FNFE while reading namespace info");
 			e.printStackTrace();
@@ -119,7 +119,7 @@ public class TFSMaster{
 			e.printStackTrace();
 		}	
 	  }	
-	public void readChunksToLocations()
+	/*public void readChunksToLocations()
 	{
 		
 		FileReader fr;
@@ -160,19 +160,19 @@ public class TFSMaster{
 			System.out.print("IOE while reading chunkHandlesToSevers");
 			e.printStackTrace();
 		}
-	}
+	}*/
 	public void readMetaData()
 	{
 		readNameSpace();
 		readFilesToChunks();
-		readChunksToLocations();
+		//readChunksToLocations();
 	}
 	public void applyLog()
 	{
 		if (currentLogFile == null)//if the master is starting up fresh
 		{
-			File logFile = new File("logfile-1.txt");//create a new logfile
-			currentLogFile ="logfile-1.txt";//set the currentLogFile
+			File logFile = new File("logfile1.txt");//create a new logfile
+			currentLogFile ="logfile1.txt";//set the currentLogFile
 		}
 		try {
 			FileReader fr = new FileReader(currentLogFile);
@@ -349,7 +349,7 @@ public class TFSMaster{
 		{
 			//check if the src doesn't exist
 			String srcDirectory = (String) ois.readObject();
-			System.out.println("Start - Source is: " + srcDirectory);
+			//System.out.println("Start - Source is: " + srcDirectory);
 			boolean checkSrcExists = namespace.contains(srcDirectory);//if this returns null, there is no match
 			if (!checkSrcExists) {
 				oos.writeObject("does_not_exist");
@@ -389,7 +389,7 @@ public class TFSMaster{
 			
 			//create the directory in the namespace
 			namespace.add(srcDirectory+dirname+"/");
-			System.out.println("Added: "+srcDirectory+dirname+" to namespace");
+			//System.out.println("Added: "+srcDirectory+dirname+" to namespace");
 			Iterator it = namespace.iterator();
 			/*while (it.hasNext())
 			{
@@ -419,8 +419,9 @@ public class TFSMaster{
 				
 				//check if directory exists
 				String dirname = (String) ois.readObject();
-				boolean checkDirExists = namespace.contains(srcDirectory+"/"+dirname);//if this returns null, there is no match
+				boolean checkDirExists = namespace.contains(srcDirectory+dirname+"/");//if this returns null, there is no match
 				if (!checkDirExists) {
+					System.out.println(srcDirectory+dirname + "/"+" doesn't exist");
 					oos.writeObject("dest_dir_does_not_exist");
 					oos.flush();
 					return;
@@ -433,17 +434,19 @@ public class TFSMaster{
 				//iterate through namespace and find all matches where the src/destinationToDelete is a substring
 				//this will capture all files/directories within the directory to be deleted
 				
-				
+				int directoriesFoundToDelete = 0;
 				Iterator it = (Iterator) namespace.iterator();
 				while (it.hasNext())
 				{
 					//check if src/dest is a substring
 					String toCheck = (String) it.next();
-					if (toCheck.startsWith(srcDirectory+"/"+dirname))
+					
+					if (toCheck.startsWith(srcDirectory+dirname))
 					{
 						//if its a match add to list of deleted (will be sent to ChunkServers via heartbeat message)
 						//then delete it from the namespace
 						filesThatHaveBeenDeleted.add(toCheck);
+						directoriesFoundToDelete++;
 						
 						//log the delete operation
 						//append this create operation to the logfile
@@ -457,6 +460,18 @@ public class TFSMaster{
 						namespace.remove(toCheck);
 					}
 				}
+				System.out.println(directoriesFoundToDelete);
+				//send response to ClientFS
+				if (directoriesFoundToDelete > 1)
+				{
+					oos.writeObject("success_dir_not_empty");
+					oos.flush();
+				}
+				else{
+					oos.writeObject("success");
+					oos.flush();
+				}
+				
 			}catch (IOException IOE){
 				IOE.printStackTrace();
 			}catch (ClassNotFoundException e) {
