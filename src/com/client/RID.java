@@ -5,8 +5,11 @@ public class RID {
 	int offset;
 	String chunkhandle;
 	int recordSize;
+	boolean isDeleted;
 	
-	public RID(){}
+	public RID(){
+		isDeleted = false;
+	}
 	
 	public int getOffset()
 	{
@@ -33,5 +36,9 @@ public class RID {
 	public int getSize()
 	{
 		return recordSize;
+	}
+	
+	public void setDeleted(boolean set) {
+		isDeleted = set;
 	}
 }
