@@ -34,12 +34,15 @@ public class TFSMaster{
 	public HashMap<String, Vector<String>> filesToChunkHandles; // maps which chunks constitute a file
 	public HashMap<String, Vector<String>> chunkHandlesToServers; //maps chunk handles to locations of their replicas(CS IP addresses)
 	
-	public static File nameSpaceFile;
-	public static File filesToChunkHandlesFile;
-	public static File chunkHandlesToServersFile;
+	public static final String nameSpaceFile = "namespace.txt";
+	public static String filesToChunkHandlesFile = "filesToChunkHandles.txt";
+	public static String chunkHandlesToServersFile = "chunkHandlesToServers.txt";
 	
 	public TFSMaster()
 	{
+		namespace = new HashSet<String>();
+		filesToChunkHandles = new HashMap<String, Vector<String>>();
+		chunkHandlesToServers = new HashMap<String, Vector<String>>();
 		
 		//read all metadata from files on startup
 		readMetaData();
@@ -64,7 +67,6 @@ public class TFSMaster{
 		BufferedReader br;
 		
 		//read namespace data
-		this.nameSpaceFile = new File("namespace.txt");
 		try {
 			fr = new FileReader(nameSpaceFile);
 			br = new BufferedReader(fr);
@@ -89,7 +91,6 @@ public class TFSMaster{
 		BufferedReader br;
 		//read mapping of files to chunkHandles
 		//each entry is in the format full/file/path.ext:chunkHandle1:chunkHandle2:chunkhandleN
-		this.filesToChunkHandlesFile = new File("filesToChunkHandles.txt");
 		try{
 				fr = new FileReader(filesToChunkHandlesFile);
 				br = new BufferedReader(fr);
@@ -124,7 +125,6 @@ public class TFSMaster{
 		BufferedReader br;
 		//read the mapping of chunkHandles to their host Servers
 		//will be in the format ChunkHandle:ServerIP,Port,ServerIP2,Port2
-		this.chunkHandlesToServersFile=new File("chunkHandlesToServers.txt");
 		try{
 			
 			fr = new FileReader(chunkHandlesToServersFile);
@@ -176,8 +176,6 @@ public class TFSMaster{
 		try {
 			FileReader fr = new FileReader(currentLogFile);
 			BufferedReader br = new BufferedReader(fr);
-				
-			String filename = br.readLine();
 				
 			//read through logfile and apply operations
 			//should be in format: create:srcDirectoryName:directoryToCreateName
@@ -279,7 +277,9 @@ public class TFSMaster{
 	public void renameFromLog(){}
 	public void deleteFilefromLog(){}
 	public void createFileFromLog(){}
-	
+	public static void main(String[] args){
+		TFSMaster master = new TFSMaster();
+	}
 	class ServerThread extends Thread
 	{
 		Socket s; TFSMaster master;
