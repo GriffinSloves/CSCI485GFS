@@ -179,6 +179,11 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		try {
 			//If the file corresponding to ChunkHandle does not exist then create it before writing into it
 			RandomAccessFile raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
+			
+			if(offset == -1) { //necessary for appends
+				offset = (int)raf.length();
+			}
+			
 			raf.seek(offset);
 			raf.write(payload, 0, payload.length);
 			raf.close();
@@ -251,6 +256,22 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		
 		return true;
 	}
+	
+	public byte[] readRecord(String ChunkHandle, int first_or_last) {
+		if(!ChunkRIDMap.containsKey(ChunkHandle))
+			return null;
+		
+		RID record; 
+		if(first_or_last == 0) {
+			record = ChunkRIDMap.get(ChunkHandle).get(0);
+		} else {
+			int numRIDs = ChunkRIDMap.get(ChunkHandle).size();
+			record = ChunkRIDMap.get(ChunkHandle).get(numRIDs-1);
+		}
+		return readChunk(ChunkHandle, record.getOffset(), record.getSize());
+	}
+	
+	
 
 	
 	public synchronized void ObtainLease(String ChunkHandle)
