@@ -31,7 +31,7 @@ public class UnitTest2 {
 			System.out.println("Unit test 2 result: fail! - 1");
     		return;
 		}
-		System.out.println("Got Thru UT1");
+		//System.out.println("Got Thru UT1");
 		
 		String dir2 = "Ghandeharizadeh";
 		String lastSec = "/" + dir2;
@@ -41,6 +41,7 @@ public class UnitTest2 {
 		fsrv = cfs.DeleteDir(lastSec + "/", String.valueOf(N));
 		
 		String[] ret2 = cfs.ListDir(lastSec);
+		System.out.println(ret2 == null);
 		isExist = isDirExist(ret2, lastSec + "/" + N);
 		if(isExist == true){
 			System.out.println("Unit test 2 result: fail! - 2");

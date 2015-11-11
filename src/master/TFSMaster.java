@@ -477,7 +477,7 @@ public class TFSMaster{
 				{
 					//check if src/dest is a substring
 					String toCheck = (String) it.next();
-					
+					//System.out.println("checking if: " + toCheck+ " begins w/ " + srcDirectory+dirname);
 					if (toCheck.startsWith(srcDirectory+dirname))
 					{
 						//if its a match add to list of deleted (will be sent to ChunkServers via heartbeat message)
@@ -494,10 +494,10 @@ public class TFSMaster{
 						pw.close();
 						
 						//remove from namespace
-						namespace.remove(toCheck);
+						it.remove();
 					}
 				}
-				System.out.println(directoriesFoundToDelete);
+				//System.out.println(directoriesFoundToDelete);
 				//send response to ClientFS
 				if (directoriesFoundToDelete > 1)
 				{
