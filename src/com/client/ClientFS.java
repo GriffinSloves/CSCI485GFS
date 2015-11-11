@@ -10,6 +10,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.Vector;
 
 import com.chunkserver.ChunkServer;
 
@@ -43,7 +44,7 @@ public class ClientFS {
 	{
 		if (ClientSocket != null) return; //The client is already connected
 		try {
-			BufferedReader binput = new BufferedReader(new FileReader(TFSMaster.ClientMasterConfigFile));
+			BufferedReader binput = new BufferedReader(new FileReader(TFSMaster.MasterConfigFile));
 			String port = binput.readLine();
 			port = port.substring( port.indexOf(':')+1 );
 			ServerPort = Integer.parseInt(port);
@@ -91,7 +92,7 @@ public class ClientFS {
 			if (response.equals("dir_exists")) return FSReturnVals.DestDirExists;
 			
 			//get confirmation that the directory was created at the master namespace level
-			response = (String[]) ReadInput.readObject();
+			response = (String) ReadInput.readObject();
 			if (response.equals("success")) return FSReturnVals.Success;
 			
 		} catch (IOException e) {
@@ -207,14 +208,10 @@ public class ClientFS {
 			
 			//if the src directory doesn't exist, return the error
 			String response = (String) ReadInput.readObject();
-			if (response.equals("does_not_exist")) return FSReturnVals.SrcDirNotExistent;
-			
-			//write the new name to master so it can update the namespace
-			WriteOutput.writeObject(NewName);
-			WriteOutput.flush();
+			if (response.equals("does_not_exist")) return null; //FSReturnVals.SrcDirNotExistent;
 			
 			//get a server response indicating if the directory is empty
-			String response = (String) ReadInput.readObject();
+			response = (String) ReadInput.readObject();
 			if(response.equals("is_empty")){
 				return null;
 			}
@@ -229,7 +226,7 @@ public class ClientFS {
 			e.printStackTrace();
 		}
 		
-		return finalResponse;
+		return null; //finalResponse;
 	}
 
 	/**
@@ -336,10 +333,10 @@ public class ClientFS {
 			WriteOutput.flush();
 			
 			//load the list of chunks into filehandle object
-			String[] chunksOfFile = (String[]) ReadInput.readObject();
+			Vector<String> chunksOfFile = (Vector<String>) ReadInput.readObject();
 			ofh.setHandles(chunksOfFile);
 			
-			HashMap<String,String> locationsOfChunks = (HashMap<String, String>) ReadInput.readObject();
+			HashMap<String, Vector<String>> locationsOfChunks = (HashMap<String, Vector<String>>) ReadInput.readObject();
 			ofh.setLocations(locationsOfChunks);
 			
 		} catch (IOException e) {
