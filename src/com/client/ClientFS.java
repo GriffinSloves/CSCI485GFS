@@ -68,8 +68,8 @@ public class ClientFS {
 	 * Example usage: CreateDir("/", "Shahram"), CreateDir("/Shahram",
 	 * "CSCI485"), CreateDir("/Shahram/CSCI485", "Lecture1")
 	 */
-	public FSReturnVals CreateDir(String src, String dirname) {
-		System.out.println("Running createDIr from cfs");
+	public FSReturnVals CreateDir(String src, String dirname) 
+	{
 		try {
 			//tell the master to create directory
 			
@@ -218,8 +218,14 @@ public class ClientFS {
 			}
 			
 			//get the list sent as a String[] at the master namespace level
-			String[] finalResponse = (String[]) ReadInput.readObject();
-
+			Vector<String> finalResponse = (Vector<String>) ReadInput.readObject();
+			//since they want a string array
+			String[] toReturn = new String[finalResponse.size()];
+			for (int i = 0; i < finalResponse.size(); i++) 
+			{
+				toReturn[i] = finalResponse.elementAt(i);
+			}
+			return toReturn;
 			
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -227,7 +233,7 @@ public class ClientFS {
 			e.printStackTrace();
 		}
 		
-		return null; //finalResponse;
+		return null ;
 	}
 
 	/**

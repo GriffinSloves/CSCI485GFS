@@ -332,6 +332,10 @@ public class TFSMaster{
 					{
 						deleteFile();
 					}
+					if (command.equals("ListDir"))
+					{
+						listDir();
+					}
 				}
 			}
 			catch (ClassNotFoundException e) {
@@ -463,8 +467,51 @@ public class TFSMaster{
 		{
 			
 		}
-		public void listDir()
+		public void listDir() throws ClassNotFoundException, IOException
 		{
+			//receive path of directory to list contents
+			String target = (String) ois.readObject();
+			//check if it exists first
+			boolean checkTargetExists = (namespace.contains(target)||namespace.contains(target+"/"));
+			if (!checkTargetExists)
+			{
+				oos.writeObject("does_not_exist");
+				oos.flush();
+				System.out.println(target +" does_not_exist");
+				return;
+			}
+			else{
+				oos.writeObject("x"); //because the client is still waiting for a response
+				oos.flush(); //send "" to clear the readObject command in ClientFS
+			}
+			//check if the directory is empty
+			Iterator it = namespace.iterator();
+			//create vector of all contents of this directory
+			Vector<String> contents = new Vector<String>();
+			while (it.hasNext())
+			{
+				String temp = (String)it.next();
+				if (temp.startsWith(target))//if it is a match -- WONT THIS GET ALL THE SUBFOLDERS OF SUBFOLDERS
+				{
+					contents.addElement(temp);
+				}
+			}
+			//if the contents only has 1 match, the directory is empty
+			if(contents.size() == 1)
+			{
+				oos.writeObject("is_empty");
+				System.out.println("the directory is empty!");
+				oos.flush();
+				return;
+			}
+			else{
+				oos.writeObject("x"); //because the client is still waiting for a response
+				oos.flush(); //send "" to clear the readObject command in ClientFS
+			}
+			
+			//send the contents
+			oos.writeObject(contents);
+			oos.flush();
 			
 		}
 		public void openFile()

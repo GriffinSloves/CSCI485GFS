@@ -28,7 +28,7 @@ public class UnitTest2 {
 		
 		boolean isExist = isDirExist(ret1, "/" + dir1+"/"+N);
 		if(isExist == true){
-			System.out.println("Unit test 2 result: fail!");
+			System.out.println("Unit test 2 result: fail! - 1");
     		return;
 		}
 		
@@ -42,14 +42,14 @@ public class UnitTest2 {
 		String[] ret2 = cfs.ListDir(lastSec);
 		isExist = isDirExist(ret2, lastSec + "/" + N);
 		if(isExist == true){
-			System.out.println("Unit test 2 result: fail!");
+			System.out.println("Unit test 2 result: fail! - 2");
     		return;
 		}
 		fsrv = cfs.DeleteDir("/", dir1);
 		if(fsrv == FSReturnVals.DirNotEmpty){
 			System.out.println("Good!  Detected " + dir1 + " exists.");
 		} else {
-			System.out.println("Unit test 2 result: fail!");
+			System.out.println("Unit test 2 result: fail! - 3");
     		return;
 		}
 		
@@ -57,7 +57,7 @@ public class UnitTest2 {
 		if(fsrv == FSReturnVals.DirNotEmpty){
 			System.out.println("Good!  Detected /" + dir2 + "/1/2 exists.");
 		} else {
-			System.out.println("Unit test 2 result: fail!");
+			System.out.println("Unit test 2 result: fail! - 4");
     		return;
 		}
 		
@@ -65,14 +65,14 @@ public class UnitTest2 {
 		for(int i = 1; i < N; i++){
 			fsrv = cfs.RenameDir("/" + dir1 + "/" + i, "/" + dir1 + "/" + i + "i");
 			if( fsrv != FSReturnVals.Success){
-				System.out.println("Unit test 2 result: fail!");
+				System.out.println("Unit test 2 result: fail! - 5");
 	    		return;
 			}
 		}
 		
 		fsrv = cfs.RenameDir("/" + dir2, "/ShahramGhandeharizadeh");
 		if( fsrv != FSReturnVals.Success ){
-			System.out.println("Unit test 2 result: fail!");
+			System.out.println("Unit test 2 result: fail! - 6");
     		return;
 		}
 		System.out.println("Unit test 2 result: success!");
