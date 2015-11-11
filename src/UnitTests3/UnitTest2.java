@@ -23,7 +23,8 @@ public class UnitTest2 {
 		int N = ut1.N;
 		String dir1 = "Shahram";
 		FSReturnVals fsrv = cfs.DeleteDir("/" + dir1 + "/", String.valueOf(N));
-		String[] ret1 = cfs.ListDir(dir1);
+		//String[] ret1 = cfs.ListDir(dir1);UNIT TEST 2 Changed see Jason's 
+		String[] ret1 = cfs.ListDir("/" + dir1);
 		
 		boolean isExist = isDirExist(ret1, "/" + dir1+"/"+N);
 		if(isExist == true){

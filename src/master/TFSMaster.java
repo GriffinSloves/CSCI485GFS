@@ -3,10 +3,13 @@ package master;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -24,11 +27,13 @@ import com.client.FileHandle;
 public class TFSMaster{
 	
 	public final static String MasterConfigFile = "MasterConfig.txt";
-	public static RandomAccessFile currentLogFile = null;
+	public static String currentLogFile;
+	public static Vector<String> filesThatHaveBeenDeleted;
+	
 	public static HashSet<String> namespace; //maps directory paths to IP address of chunk servers
 	public HashMap<String, Vector<String>> filesToChunkHandles; // maps which chunks constitute a file
 	public HashMap<String, Vector<String>> chunkHandlesToServers; //maps chunk handles to locations of their replicas(CS IP addresses)
-	public static Vector<String> filesThatHaveBeenDeleted;
+	
 	public static File nameSpaceFile;
 	public static File filesToChunkHandlesFile;
 	public static File chunkHandlesToServersFile;
@@ -165,51 +170,53 @@ public class TFSMaster{
 	{
 		if (currentLogFile == null)//if the master is starting up fresh
 		{
-			try {
-				RandomAccessFile temp  = new RandomAccessFile(MasterConfigFile,"r");
-				temp.seek(0);//filename of newest log record should be written at the top of MasterConfigFile
-				String filename = temp.readLine();
-				currentLogFile = new RandomAccessFile(filename,"r");//open the log file to be read
-				
-				//read through logfile and apply operations
-				//should be in format: create:srcDirectoryName:directoryToCreateName
-				while (currentLogFile.readLine()!= null)
-				{
-					String logLine = currentLogFile.readLine();
-					StringTokenizer str = new StringTokenizer(logLine);
-					String command = str.nextToken();
-					if (command.equals("createDir"))
-					{
-						createFromLog(str);
-					}
-					if (command.equals("rename"))
-					{
-						
-					}
-					if (command.equals("delete"))
-					{
-						deleteFromLog(str);
-					}
-					if (command.equals("createFile"))
-					{
-						
-					}
-					if (command.equals("deleteFile"))
-					{
-						
-					}
-				}
-				
-				
-			} catch (FileNotFoundException e) {
-				System.out.println("FNFE: Error reading MasterConfig to find current log");
-				e.printStackTrace();
-			} catch (IOException e) {
-				System.out.println("IOE: Error reading MasterConfig to apply current log");
-				e.printStackTrace();
-			}
-			
+			File logFile = new File("logfile-1.txt");//create a new logfile
+			currentLogFile ="logfile-1.txt";//set the currentLogFile
 		}
+		try {
+			FileReader fr = new FileReader(currentLogFile);
+			BufferedReader br = new BufferedReader(fr);
+				
+			String filename = br.readLine();
+				
+			//read through logfile and apply operations
+			//should be in format: create:srcDirectoryName:directoryToCreateName
+			while (br.readLine()!= null)
+			{
+				String logLine = br.readLine();//read each line of the log
+				StringTokenizer str = new StringTokenizer(logLine);
+				String command = str.nextToken();//the first token is the command
+				
+				if (command.equals("createDir"))
+				{
+					createFromLog(str);
+				}
+				if (command.equals("rename"))
+				{
+					
+				}
+				if (command.equals("delete"))
+				{
+					deleteFromLog(str);
+				}
+				if (command.equals("createFile"))
+				{
+					
+				}
+				if (command.equals("deleteFile"))
+				{
+						
+				}
+			}		
+		} catch (FileNotFoundException e) {
+			System.out.println("FNFE: Error reading MasterConfig to find current log");
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("IOE: Error reading MasterConfig to apply current log");
+			e.printStackTrace();
+		}
+			
+		
 	}
 	
 	public void createFromLog(StringTokenizer str)
@@ -269,7 +276,9 @@ public class TFSMaster{
 			}
 		}
 	}
-	
+	public void renameFromLog(){}
+	public void deleteFilefromLog(){}
+	public void createFileFromLog(){}
 	
 	class ServerThread extends Thread
 	{
@@ -353,9 +362,11 @@ public class TFSMaster{
 			}
 			
 			//append this create operation to the logfile
-			RandomAccessFile log = master.currentLogFile;
 			if(master.currentLogFile == null) System.out.println("Cannot append to log, current log == null");
-			
+			FileOutputStream fos = new FileOutputStream(master.currentLogFile);
+			PrintWriter pw = new PrintWriter(fos); 
+			pw.println("createDir:"+srcDirectory+"/"+dirname);//create log record of create operation
+			pw.close();
 			
 			//create the directory in the namespace
 			namespace.add(srcDirectory+"/"+dirname);
@@ -409,6 +420,16 @@ public class TFSMaster{
 						//if its a match add to list of deleted (will be sent to ChunkServers via heartbeat message)
 						//then delete it from the namespace
 						filesThatHaveBeenDeleted.add(toCheck);
+						
+						//log the delete operation
+						//append this create operation to the logfile
+						if(master.currentLogFile == null) System.out.println("Cannot append to log, current log == null");
+						FileOutputStream fos = new FileOutputStream(master.currentLogFile);
+						PrintWriter pw = new PrintWriter(fos); 
+						pw.println("deleteDir:"+srcDirectory+"/"+dirname);//create log record of create operation
+						pw.close();
+						
+						//remove from namespace
 						namespace.remove(toCheck);
 					}
 				}
