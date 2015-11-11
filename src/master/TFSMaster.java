@@ -47,7 +47,6 @@ public class TFSMaster{
 		
 		//read all metadata from files on startup
 		readMetaData();
-		
 		ServerSocket ss = null;
 		try{
 			ss = new ServerSocket(43317);//find open socket
@@ -71,13 +70,14 @@ public class TFSMaster{
 		try {
 			fr = new FileReader(nameSpaceFile);
 			br = new BufferedReader(fr);
-			
-			namespace.add("/"); //to create the overall source of the namespace
-			while(br.readLine() != null)
-			{
-				String temp = br.readLine();//read each entry from file
+			//WHY?? br.readline reading first input
+			String temp = br.readLine();
+			while(temp != null){
 				namespace.add(temp);//add each entry
-			}	
+				System.out.println("Constructor added: "+temp);
+				temp = br.readLine();//read each entry from file
+			}
+			System.out.println("After initialization from file namespace size: "+namespace.size());
 		} catch (FileNotFoundException e) {
 			System.out.print("FNFE while reading namespace info");
 			e.printStackTrace();
@@ -299,59 +299,62 @@ public class TFSMaster{
 		
 		public void run()
 		{
-			
-				try {
-					while (true)
+			try{
+				while (true)
+				{
+					String command = (String) ois.readObject();
+					
+					if (command.equals("CreateDir"))
 					{
-						String command = (String) ois.readObject();
-						
-						if (command.equals("CreateDir"))
-						{
-							createDir();
-						}
-						if (command.equals("DeleteDir"))
-						{
-							deleteDir();
-						}
-						if (command.equals("RenameDir"))
-						{
-							renameDir();
-						}
-						if (command.equals("openFile"))
-						{
-							openFile();
-						}
-						if (command.equals("CreateDir"))
-						{
-							closeFile();
-						}
-						if (command.equals("CreateFile"))
-						{
-							createFile();
-						}
-						if (command.equals("DeleteFile"))
-						{
-							deleteFile();
-						}
+						createDir();
 					}
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
+					if (command.equals("DeleteDir"))
+					{
+						deleteDir();
+					}
+					if (command.equals("RenameDir"))
+					{
+						renameDir();
+					}
+					if (command.equals("openFile"))
+					{
+						openFile();
+					}
+					if (command.equals("CreateDir"))
+					{
+						closeFile();
+					}
+					if (command.equals("CreateFile"))
+					{
+						createFile();
+					}
+					if (command.equals("DeleteFile"))
+					{
+						deleteFile();
+					}
 				}
+			}
+			catch (ClassNotFoundException e) {
+					e.printStackTrace();
+			}
+			catch (IOException e) {
+					e.printStackTrace();
+			}
 		}
 		public void createDir() throws IOException, ClassNotFoundException
 		{
 			//check if the src doesn't exist
 			String srcDirectory = (String) ois.readObject();
+			System.out.println("Start - Source is: " + srcDirectory);
 			boolean checkSrcExists = namespace.contains(srcDirectory);//if this returns null, there is no match
 			if (!checkSrcExists) {
 				oos.writeObject("does_not_exist");
 				oos.flush();
+				System.out.println(srcDirectory +" does_not_exist");
 				return;
 			}
 			else{
-				oos.writeObject(""); //because the client is still waiting for a response
+				oos.writeObject("x"); //because the client is still waiting for a response
 				oos.flush(); //send "" to clear the readObject command in ClientFS
 			}
 			
@@ -362,10 +365,11 @@ public class TFSMaster{
 			if (checkDirExists) {
 				oos.writeObject("dir_exists");
 				oos.flush();
+				System.out.println("dir_exists");
 				return;
 			}
 			else{
-				oos.writeObject(""); //because the client is still waiting for a response
+				oos.writeObject("x"); //because the client is still waiting for a response
 				oos.flush(); //send "" to clear the readObject command in ClientFS
 			}
 			
@@ -376,12 +380,17 @@ public class TFSMaster{
 			}
 			FileOutputStream fos = new FileOutputStream(master.currentLogFile);
 			PrintWriter pw = new PrintWriter(fos); 
-			pw.println("createDir:"+srcDirectory+"/"+dirname);//create log record of create operation
+			pw.println("createDir:"+srcDirectory+":"+dirname);//create log record of create operation
 			pw.close();
 			
 			//create the directory in the namespace
-			namespace.add(srcDirectory+"/"+dirname);
-			
+			namespace.add(srcDirectory+dirname+"/");
+			System.out.println("Added: "+srcDirectory+dirname+" to namespace");
+			Iterator it = namespace.iterator();
+			while (it.hasNext())
+			{
+				System.out.print(it.next()+", ");
+			}
 			//send confirmation
 			oos.writeObject("success");
 			oos.flush();

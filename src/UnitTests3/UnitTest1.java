@@ -26,14 +26,15 @@ public class UnitTest1 {
 		String dir1 = "Shahram";
 		FSReturnVals fsrv = cfs.CreateDir("/", dir1);
 		if ( fsrv != FSReturnVals.Success ){
-			System.out.println("Unit test 1 result: fail!");
+			System.out.println("Unit test 1 result: fail! - 1");
     		return;
 		}
 		String[] gen1 = new String[N];
 		for(int i = 1; i <= N; i++){
+			//System.out.println("UT1 Creating:" + "/" + dir1 + "/"+ String.valueOf(i));
 			fsrv = cfs.CreateDir("/" + dir1 + "/", String.valueOf(i));
 			if( fsrv != FSReturnVals.Success ){
-				System.out.println("Unit test 1 result: fail!");
+				System.out.println("Unit test 1 result: fail! - 2");
 	    		return;
 			}
 			gen1[i - 1] = "/" + dir1 + "/" + i;

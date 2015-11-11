@@ -51,6 +51,7 @@ public class ClientFS {
 			ClientSocket = new Socket("127.0.0.1", ServerPort);//should client be reading from config?
 			WriteOutput = new ObjectOutputStream(ClientSocket.getOutputStream());
 			ReadInput = new ObjectInputStream(ClientSocket.getInputStream());
+
 		}catch (FileNotFoundException e) {
 			System.out.println("Error (Client), the config file "+ TFSMaster.MasterConfigFile +" containing the port of the ChunkServer is missing.");
 		}catch (IOException e) {
@@ -68,7 +69,7 @@ public class ClientFS {
 	 * "CSCI485"), CreateDir("/Shahram/CSCI485", "Lecture1")
 	 */
 	public FSReturnVals CreateDir(String src, String dirname) {
-		
+		System.out.println("Running createDIr from cfs");
 		try {
 			//tell the master to create directory
 			
