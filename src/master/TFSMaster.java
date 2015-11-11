@@ -298,46 +298,46 @@ public class TFSMaster{
 		
 		public void run()
 		{
-			while (true)//process requests
-			{
+			
 				try {
-					String command = (String) ois.readObject();
-					
-					if (command.equals("CreateDir"))
+					while (true)
 					{
-						createDir();
+						String command = (String) ois.readObject();
+						
+						if (command.equals("CreateDir"))
+						{
+							createDir();
+						}
+						if (command.equals("DeleteDir"))
+						{
+							deleteDir();
+						}
+						if (command.equals("RenameDir"))
+						{
+							renameDir();
+						}
+						if (command.equals("openFile"))
+						{
+							openFile();
+						}
+						if (command.equals("CreateDir"))
+						{
+							closeFile();
+						}
+						if (command.equals("CreateFile"))
+						{
+							createFile();
+						}
+						if (command.equals("DeleteFile"))
+						{
+							deleteFile();
+						}
 					}
-					if (command.equals("DeleteDir"))
-					{
-						deleteDir();
-					}
-					if (command.equals("RenameDir"))
-					{
-						renameDir();
-					}
-					if (command.equals("openFile"))
-					{
-						openFile();
-					}
-					if (command.equals("CreateDir"))
-					{
-						closeFile();
-					}
-					if (command.equals("CreateFile"))
-					{
-						createFile();
-					}
-					if (command.equals("DeleteFile"))
-					{
-						deleteFile();
-					}
-					
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-			}
 		}
 		public void createDir() throws IOException, ClassNotFoundException
 		{
