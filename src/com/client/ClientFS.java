@@ -10,7 +10,6 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.util.HashMap;
-import java.util.Vector;
 
 import com.chunkserver.ChunkServer;
 
@@ -28,7 +27,7 @@ public class ClientFS {
 		DirNotEmpty, //Returned when a non-empty directory is deleted
 		SrcDirNotExistent, // Returned when source directory does not exist
 		DestDirExists, // Returned when a destination directory exists
-		DestDirNotExistent, //Return when destination directory doesn't exist
+		DestDirNotExistent, // Returned when a destination directory does not exist
 		FileExists, // Returned when a file exists
 		FileDoesNotExist, // Returns when a file does not exist
 		BadHandle, // Returned when the handle for an open file is not valid
@@ -44,7 +43,7 @@ public class ClientFS {
 	{
 		if (ClientSocket != null) return; //The client is already connected
 		try {
-			BufferedReader binput = new BufferedReader(new FileReader(TFSMaster.MasterConfigFile));
+			BufferedReader binput = new BufferedReader(new FileReader(TFSMaster.ClientMasterConfigFile));
 			String port = binput.readLine();
 			port = port.substring( port.indexOf(':')+1 );
 			ServerPort = Integer.parseInt(port);
@@ -92,7 +91,7 @@ public class ClientFS {
 			if (response.equals("dir_exists")) return FSReturnVals.DestDirExists;
 			
 			//get confirmation that the directory was created at the master namespace level
-			response = (String) ReadInput.readObject();
+			response = (String[]) ReadInput.readObject();
 			if (response.equals("success")) return FSReturnVals.Success;
 			
 		} catch (IOException e) {
@@ -114,35 +113,36 @@ public class ClientFS {
 	public FSReturnVals DeleteDir(String src, String dirname) {
 		
 		try {
-			WriteOutput.writeObject("DeleteDir");//tell the master client wants to delete directory
+			//tell the master to create directory
+			WriteOutput.writeObject("DeleteDir");
 			WriteOutput.flush();
 			
-			WriteOutput.writeObject(src);//send the client the src directory name
+			//write the path of src directory to server to check if it exists
+			WriteOutput.writeObject(src);
 			WriteOutput.flush();
 			
-			//if the src directory doesn't exist return that error
+			//if the src directory doesn't exist, return the error
 			String response = (String) ReadInput.readObject();
 			if (response.equals("does_not_exist")) return FSReturnVals.SrcDirNotExistent;
 			
+			//write the target directory name to master so it can update the namespace
 			WriteOutput.writeObject(dirname);
 			WriteOutput.flush();
 			
-			//if the destination to be deleted doesn't exist return that error
+			//check if directory already exists with that name
 			response = (String) ReadInput.readObject();
-			if(response.equals("dest_dir_does_not_exist")) return FSReturnVals.DestDirNotExistent;
+			if (response.equals("dest_dir_does_not_exist")) return FSReturnVals.DestDirNotExistent;
 			
-			//get response from server for successful delete
+			//get confirmation that the directory was deleted at the master namespace level
 			response = (String) ReadInput.readObject();
 			if (response.equals("success")) return FSReturnVals.Success;
 			else if (response.equals("success_dir_not_empty")) return FSReturnVals.DirNotEmpty;
-
 			
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
-		
 		
 		return null;
 	}
@@ -157,6 +157,33 @@ public class ClientFS {
 	 */
 	public FSReturnVals RenameDir(String src, String NewName) {
 		
+		try {
+			//tell the master to create directory
+			WriteOutput.writeObject("RenameDir");
+			WriteOutput.flush();
+			
+			//write the path of src directory to server to check if it exists
+			WriteOutput.writeObject(src);
+			WriteOutput.flush();
+			
+			//if the src directory doesn't exist, return the error
+			String response = (String) ReadInput.readObject();
+			if (response.equals("does_not_exist")) return FSReturnVals.SrcDirNotExistent;
+			
+			//write the new name to master so it can update the namespace
+			WriteOutput.writeObject(NewName);
+			WriteOutput.flush();
+			
+			//get confirmation that the directory was renamed at the master namespace level
+			response = (String) ReadInput.readObject();
+			if (response.equals("success")) return FSReturnVals.Success;
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
 		return null;
 	}
 
@@ -169,7 +196,40 @@ public class ClientFS {
 	 */
 	public String[] ListDir(String tgt) {
 		
-		return null;
+		try {
+			//tell the master to create directory
+			WriteOutput.writeObject("ListDir");
+			WriteOutput.flush();
+			
+			//write the path of src directory to server to check if it exists
+			WriteOutput.writeObject(tgt);
+			WriteOutput.flush();
+			
+			//if the src directory doesn't exist, return the error
+			String response = (String) ReadInput.readObject();
+			if (response.equals("does_not_exist")) return FSReturnVals.SrcDirNotExistent;
+			
+			//write the new name to master so it can update the namespace
+			WriteOutput.writeObject(NewName);
+			WriteOutput.flush();
+			
+			//get a server response indicating if the directory is empty
+			String response = (String) ReadInput.readObject();
+			if(response.equals("is_empty")){
+				return null;
+			}
+			
+			//get the list sent as a String[] at the master namespace level
+			String[] finalResponse = (String[]) ReadInput.readObject();
+
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		return finalResponse;
 	}
 
 	/**
@@ -180,6 +240,36 @@ public class ClientFS {
 	 * Example usage: Createfile("/Shahram/CSCI485/Lecture1", "Intro.pptx")
 	 */
 	public FSReturnVals CreateFile(String tgtdir, String filename) {
+		
+		try {
+			//tell the master to create file
+			WriteOutput.writeObject("CreateFile");
+			WriteOutput.flush();
+			
+			//write the path of tgtdir directory to server to check if it exists
+			WriteOutput.writeObject(tgtdir);
+			WriteOutput.flush();
+			
+			//if the src directory doesn't exist, return the error
+			String response = (String) ReadInput.readObject();
+			if (response.equals("does_not_exist")) return FSReturnVals.SrcDirNotExistent;
+			
+			//write the target directory name to master so it can update the namespace
+			WriteOutput.writeObject(filename);
+			WriteOutput.flush();
+			
+			//check if directory already exists with that name
+			//get confirmation that the directory was created at the master namespace level
+			response = (String) ReadInput.readObject();
+			if (response.equals("file_exists")) return FSReturnVals.FileExists;
+			else if (response.equals("success")) return FSReturnVals.Success;
+			
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
 		
 		return null;
 	}
@@ -192,6 +282,36 @@ public class ClientFS {
 	 * Example usage: DeleteFile("/Shahram/CSCI485/Lecture1", "Intro.pptx")
 	 */
 	public FSReturnVals DeleteFile(String tgtdir, String filename) {
+		
+		try {
+			//tell the master to create file
+			WriteOutput.writeObject("DeleteFile");
+			WriteOutput.flush();
+			
+			//write the path of tgtdir directory to server to check if it exists
+			WriteOutput.writeObject(tgtdir);
+			WriteOutput.flush();
+			
+			//if the src directory doesn't exist, return the error
+			String response = (String) ReadInput.readObject();
+			if (response.equals("does_not_exist")) return FSReturnVals.SrcDirNotExistent;
+			
+			//write the target directory name to master so it can update the namespace
+			WriteOutput.writeObject(filename);
+			WriteOutput.flush();
+			
+			//check if directory already exists with that name
+			//get confirmation that the directory was created at the master namespace level
+			response = (String) ReadInput.readObject();
+			if (response.equals("file_exists")) return FSReturnVals.FileExists;
+			else if (response.equals("success")) return FSReturnVals.Success;
+			
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
 		
 		return null;
 	}
@@ -216,11 +336,10 @@ public class ClientFS {
 			WriteOutput.flush();
 			
 			//load the list of chunks into filehandle object
-			Vector<String> chunksOfFile = (Vector<String>) ReadInput.readObject();
+			String[] chunksOfFile = (String[]) ReadInput.readObject();
 			ofh.setHandles(chunksOfFile);
 			
-			//load the HashMap of chunkhandles to list of servers w/replicas
-			HashMap<String,Vector<String>> locationsOfChunks = (HashMap<String, Vector<String>>) ReadInput.readObject();
+			HashMap<String,String> locationsOfChunks = (HashMap<String, String>) ReadInput.readObject();
 			ofh.setLocations(locationsOfChunks);
 			
 		} catch (IOException e) {
