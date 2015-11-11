@@ -35,14 +35,15 @@ public class TFSMaster{
 	public HashMap<String, Vector<String>> chunkHandlesToServers; //maps chunk handles to locations of their replicas(CS IP addresses)
 	
 	public static final String nameSpaceFile = "namespace.txt";
-	public static String filesToChunkHandlesFile = "filesToChunkHandles.txt";
-	public static String chunkHandlesToServersFile = "chunkHandlesToServers.txt";
+	public static final String filesToChunkHandlesFile = "filesToChunkHandles.txt";
+	public static final String chunkHandlesToServersFile = "chunkHandlesToServers.txt";
 	
 	public TFSMaster()
 	{
 		namespace = new HashSet<String>();
 		filesToChunkHandles = new HashMap<String, Vector<String>>();
 		chunkHandlesToServers = new HashMap<String, Vector<String>>();
+		filesThatHaveBeenDeleted = new Vector<String>();
 		
 		//read all metadata from files on startup
 		readMetaData();
