@@ -323,6 +323,14 @@ public class TFSMaster{
 					{
 						closeFile();
 					}
+					if (command.equals("CreateFile"))
+					{
+						createFile();
+					}
+					if (command.equals("DeleteFile"))
+					{
+						deleteFile();
+					}
 					
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
@@ -480,6 +488,14 @@ public class TFSMaster{
 			}
 		}
 		public void closeFile()
+		{
+			
+		}
+		public void createFile()
+		{
+			
+		}
+		public void deleteFile()
 		{
 			
 		}
