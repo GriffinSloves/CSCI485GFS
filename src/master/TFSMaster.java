@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -32,7 +33,7 @@ public class TFSMaster{
 	public static String currentLogFile = "log1.txt";
 	public static Vector<String> filesThatHaveBeenDeleted;
 	
-	public static HashSet<String> namespace; //maps directory paths to IP address of chunk servers
+	public static LinkedHashSet<String> namespace; //maps directory paths to IP address of chunk servers
 	public LinkedHashMap<String, Vector<String>> filesToChunkHandles; // maps which chunks constitute a file
 	public HashMap<String, Vector<Location>> chunkHandlesToServers; //maps chunk handles to locations of their replicas(CS IP addresses)
 	public HashMap<String, Lease> ChunkLeaseMap;
@@ -45,7 +46,7 @@ public class TFSMaster{
 	
 	public TFSMaster()
 	{
-		namespace = new HashSet<String>();
+		namespace = new LinkedHashSet<String>();
 		filesToChunkHandles = new LinkedHashMap<String, Vector<String>>();
 		chunkHandlesToServers = new HashMap<String, Vector<Location>>();
 		filesThatHaveBeenDeleted = new Vector<String>();
@@ -365,11 +366,11 @@ public class TFSMaster{
 					{
 						renameDir();
 					}
-					if (command.equals("openFile"))
+					if (command.equals("OpenFile"))
 					{
 						openFile();
 					}
-					if (command.equals("CreateDir"))
+					if (command.equals("CloseFile"))
 					{
 						closeFile();
 					}
@@ -384,6 +385,9 @@ public class TFSMaster{
 					if (command.equals("ListDir"))
 					{
 						listDir();
+					}
+					if(command.equals("NameSpace")){
+						NameSpace();
 					}
 				}
 			}
@@ -814,7 +818,22 @@ public class TFSMaster{
 					e.printStackTrace();
 			}
 		}
+		
+		public void NameSpace() {
+			//send confirmation
+			try {
+				//send namespace hashset
+				oos.writeObject(namespace);
+				oos.flush();
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+		}
+			
+		}
 	}
+	
+	
 
 
 
