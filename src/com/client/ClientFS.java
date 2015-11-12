@@ -219,11 +219,16 @@ public class ClientFS {
 			
 			//if the src directory doesn't exist, return the error
 			String response = (String) ReadInput.readObject();
-			if (response.equals("does_not_exist")) return (new String[0]); //FSReturnVals.SrcDirNotExistent;
+			if (response.equals("does_not_exist"))
+			{
+				System.out.println("SRC doesn't exist, listDir CFS");
+				return (new String[0]); //FSReturnVals.SrcDirNotExistent;
+			}
 			
 			//get a server response indicating if the directory is empty
 			response = (String) ReadInput.readObject();
 			if(response.equals("is_empty")){
+				System.out.println("SRC is empty, listDir CFS");
 				return (new String[0]);
 			}
 			
@@ -243,7 +248,7 @@ public class ClientFS {
 			e.printStackTrace();
 		}
 		
-		return null ;
+		return new String[0];
 	}
 
 	/**

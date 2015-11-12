@@ -56,7 +56,7 @@ public class TFSMaster{
 		filesThatHaveBeenDeleted = new Vector<String>();
 		
 		//read all metadata from files on startup
-		readMasterConfig();
+		//readMasterConfig();
 		readMetaData();
 		ServerSocket ss = null;
 		try{
@@ -517,7 +517,7 @@ public class TFSMaster{
 				oos.flush(); //send "" to clear the readObject command in ClientFS
 			}
 			
-			//append this create operation to the logfile
+		/*	//append this create operation to the logfile
 			if(master.currentLogFile == null) {
 				System.out.println("Cannot append to log, current log == null");
 				
@@ -525,7 +525,7 @@ public class TFSMaster{
 			FileOutputStream fos = new FileOutputStream(master.currentLogFile);
 			PrintWriter pw = new PrintWriter(fos); 
 			pw.println("createDir:"+srcDirectory+":"+dirname);//create log record of create operation
-			pw.close();
+			pw.close();*/
 			
 			//create the directory in the namespace
 			namespace.add(srcDirectory+dirname+"/");
@@ -593,11 +593,11 @@ public class TFSMaster{
 					oos.writeObject("success");
 					oos.flush();
 					
-					//write the delete to the log
+					/*//write the delete to the log
 					FileWriter fw = new FileWriter(currentLogFile,true);//open file in append only mode
 					BufferedWriter bw = new BufferedWriter(fw);
 					bw.write("deleteDir:"+srcDirectory+":"+dirname+"/");
-					bw.close();
+					bw.close();*/
 					
 					//remove the namespace from directory
 					namespace.remove(srcDirectory+dirname+"/");
@@ -645,9 +645,9 @@ public class TFSMaster{
 			//must also rename any directory beginning w/ src/oldName
 			//System.out.println("Finding directory paths that start with: " + src);
 			
-			//Writes to logfile
+			/*//Writes to logfile
 			FileWriter fw = new FileWriter(currentLogFile,true);//open file in append only mode
-			BufferedWriter bw = new BufferedWriter(fw);
+			BufferedWriter bw = new BufferedWriter(fw);*/
 			
 			
 			Vector<String> newNamestoAdd= new Vector<String>();
@@ -665,7 +665,7 @@ public class TFSMaster{
 					String afterSrc = temp.substring(srcLength, temp.length());
 					
 					//write to the log
-					bw.write("renameDir:"+src+":"+newName);
+					//bw.write("renameDir:"+src+":"+newName);
 					
 					//add the renamed path
 					String renamedPath = newName+"/"+afterSrc;
@@ -674,7 +674,7 @@ public class TFSMaster{
 					//remove the old entry from the namespace
 					it.remove();
 				}
-			}bw.close();
+			}//bw.close();
 			
 			//add back all the newly named paths to namespace
 			for (int i = 0; i < newNamestoAdd.size(); i++)
@@ -720,7 +720,7 @@ public class TFSMaster{
 			if(contents.size() == 1)
 			{
 				oos.writeObject("is_empty");
-				//System.out.println("the directory is empty!");
+				System.out.println("the directory is empty!");
 				oos.flush();
 				return;
 			}

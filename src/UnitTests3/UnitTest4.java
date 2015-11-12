@@ -24,12 +24,12 @@ public class UnitTest4 {
 		ClientFS cfs = new ClientFS();
 		FSReturnVals fsrv = cfs.CreateDir("/", dir1);
 		if ( fsrv != FSReturnVals.Success ){
-			System.out.println("Unit test 4 result: fail!");
+			System.out.println("Unit test 4 result: fail!-1");
     		return;
 		}
 		fsrv = cfs.CreateFile("/" + dir1 + "/", "emp");
 		if( fsrv != FSReturnVals.Success ){
-			System.out.println("Unit test 4 result: fail!");
+			System.out.println("Unit test 4 result: fail!-2");
     		return;
 		}
 		//get the file handle first
@@ -79,14 +79,14 @@ public class UnitTest4 {
 		for(int i = 0; i < vect.size(); i++){
 			fsrv = crec.DeleteRecord(fh, vect.get(i));
 			if(fsrv != FSReturnVals.Success){
-				System.out.println("Unit test 4 result: failed to delete the record!");
+				System.out.println("Unit test 4 result: failed to delete the record!-3");
 				return;
 			}
 		}
 		
 		fsrv = cfs.CloseFile(fh);
 		if(cntr != NumRecs){
-			System.out.println("Unit test 4 result: fail!");
+			System.out.println("Unit test 4 result: fail!-4");
     		return;
 		}
 		
@@ -102,7 +102,7 @@ public class UnitTest4 {
 			int value = ((head[0] & 0xFF) << 24) | ((head[1] & 0xFF) << 16)
 			        | ((head[2] & 0xFF) << 8) | (head[3] & 0xFF);
 			if(value % 2 != 0){
-				System.out.println("Unit test 4 result: fail!  Found an even numbered record with value " + value + ".");
+				System.out.println("Unit test 4 result: fail!-5  Found an even numbered record with value " + value + ".");
 	    		return;
 			}
 			RID1 = RID2;
