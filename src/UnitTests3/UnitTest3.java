@@ -41,7 +41,8 @@ public class UnitTest3 {
 		
 		String dir2 = "Shahram";
 		for(int i = 1; i <= N; i++){
-			fsrv = cfs.CreateFile("/" + dir2 + "/2/", "Lecture" + i);
+			fsrv = cfs.CreateFile("/" + dir2 + "/2" + i + "/", "Lecture" + i);
+			//fsrv = cfs.CreateFile("/" + dir2 + "/2/", "Lecture" + i); --Correction From TA
 			if( fsrv != FSReturnVals.Success ){
 				System.out.println("Unit test 3 result: fail!");
 	    		return;
@@ -49,7 +50,8 @@ public class UnitTest3 {
 		}
 		
 		for(int i = 1; i <= N; i++){
-			fsrv = cfs.DeleteFile("/" + dir2 + "/2/", "Lecture" + i);
+			fsrv = cfs.CreateFile("/" + dir2 + "/2" + i + "/", "Lecture" + i);
+			//fsrv = cfs.DeleteFile("/" + dir2 + "/2/", "Lecture" + i); --Correction from TA
 			if( fsrv != FSReturnVals.Success ){
 				System.out.println("Unit test 3 result: fail!");
 	    		return;
