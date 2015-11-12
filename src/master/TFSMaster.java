@@ -23,6 +23,8 @@ import java.util.Vector;
 
 
 
+
+
 import com.chunkserver.ChunkServer;
 import com.chunkserver.Lease;
 import com.client.FileHandle;
@@ -530,6 +532,8 @@ public class TFSMaster{
 			
 			//check if source exists
 			System.out.println(namespace.size());
+			System.out.println("src = " + src);
+
 			boolean checkSrcExists = (namespace.contains(src) || namespace.contains(src+"/"));
 			if (!checkSrcExists)
 			{
@@ -570,8 +574,8 @@ public class TFSMaster{
 			//must also rename any directory beginning w/ src/oldName
 			/*Iterator*/ it = namespace.iterator();
 			System.out.println("Finding directory paths that start with: " + src);
-			while (it.hasNext())
-			{
+			//while (it.hasNext())
+			//{
 				String temp = (String) it.next();//iterate through each namespace entry
 				if (temp.startsWith(src))
 				{
@@ -590,7 +594,7 @@ public class TFSMaster{
 					it.remove();
 					
 				}
-			}
+			//}
 			//send confirmation back to ClientFS
 			oos.writeObject("success");
 			oos.flush();
@@ -687,16 +691,15 @@ public class TFSMaster{
 			} catch (IOException e) {
 				e.printStackTrace();
 			}		}
+		
 		public void closeFile()
 		{
 			try {
 				//read which file wants to be opened
-				FileHandle fileHandle = (FileHandle) ois.readObject();
-				
-				String filePath = fileHandle.getFileName();
-				
-				//use lookup table to get handles of all chunks of that file
-				Vector<String> chunksOfFile = filesToChunkHandles.get(filePath);
+				String fileName = (String) ois.readObject();
+				Vector<String> chunksOfFile = (Vector<String>) ois.readObject();
+				HashMap<String, Vector<Location>> locationsOfChunks = ofh.getLocations();
+				ois.readObject()
 				
 				if(chunksOfFile==null){
 					//send confirmation that file does not exist or is invalid

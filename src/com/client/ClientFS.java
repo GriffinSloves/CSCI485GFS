@@ -381,30 +381,33 @@ public class ClientFS {
 			WriteOutput.writeObject("CloseFile");
 			WriteOutput.flush();
 			
-			//tell the server which filehandle
-			WriteOutput.writeObject(ofh);
-			WriteOutput.flush();
+			String fileName = ofh.getFileName();
+			Vector<String> chunksOfFile = ofh.getChunkHandles();
+			HashMap<String, Vector<Location>> locationsOfChunks = ofh.getLocations();
 			
-			String response = (String) ReadInput.readObject();
-			if(response.equals("invalid")){
+			if(fileName == null || chunksOfFile == null || locationsOfChunks == null){
 				return FSReturnVals.BadHandle;
 			}
 			
-			//load the list of chunks into filehandle object
-			ofh.setHandles(null);
+			WriteOutput.writeObject(fileName);
+			WriteOutput.flush();
 			
-			ofh.setLocations(null);
+			WriteOutput.writeObject(chunksOfFile);
+			WriteOutput.flush();
 			
-			ofh.setFileName(null);
+			
+			WriteOutput.writeObject(locationsOfChunks);
+			WriteOutput.flush();
+			
+			
+			
 			
 		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
 		
 		
-		return null;
+		return FSReturnVals.Success;
 	}
 	
 	public void displayNamespace(){
