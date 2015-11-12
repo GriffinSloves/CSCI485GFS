@@ -58,7 +58,6 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	
 	private HashMap<String, Lease> LeaseMap;
 	private HashMap<String, String[]> ChunkReplicaMap;
-	private HashMap<String, ArrayList<RID>> ChunkRIDMap;
 	
 	private ServerSocket ss;
 	private Socket MasterConnection;
@@ -160,8 +159,6 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	 */
 	public String createChunk() {
 		counter++;
-		ArrayList<RID> ridArray = new ArrayList<RID>();
-		ChunkRIDMap.put(String.valueOf(counter), ridArray);
 		return String.valueOf(counter);
 	}
 	
@@ -173,23 +170,10 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		try {
 			//If the file corresponding to ChunkHandle does not exist then create it before writing into it
 			RandomAccessFile raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
-			
-			if(offset == -1) { //necessary for appends
-				offset = (int)raf.length();
-			}
-			
 			raf.seek(offset);
 			raf.write(payload, 0, payload.length);
 			raf.close();
 			
-			//Create record
-			RID rid = new RID();
-			rid.setOffset(offset);
-			rid.setChunkHandle(ChunkHandle);
-			rid.setSize(payload.length);
-			ArrayList<RID> ridArray = ChunkRIDMap.get(ChunkHandle);
-			ridArray.add(rid);
-			ChunkRIDMap.put(ChunkHandle, ridArray);
 			return true;
 		} catch (IOException ex) {
 			ex.printStackTrace();
@@ -219,29 +203,117 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		}
 	}
 	
-	public long append(String ChunkHandle, byte[] payload) {
+	public int append(String ChunkHandle, byte[] payload) {
 		try {
 			
-			RandomAccessFile raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
-			long fileLength = raf.length();
-			raf.seek(fileLength);
-			raf.write(payload);
-			raf.close();
-			return fileLength;
+			File file = new File(filePath + ChunkHandle);
+			RandomAccessFile raf;
+			byte [] intBuf = new byte[4];
+			if(!file.exists())
+			{
+				raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
+				//Write Header
+				//0-3, num records
+				//4-7, Start of next record
+				//8-11, End of free space
+				intBuf = ChunkServer.convertIntToBytes(0);
+				raf.write(intBuf, 0, 4);
+				intBuf = ChunkServer.convertIntToBytes(12);
+				raf.write(intBuf, 4, 4);
+				intBuf = ChunkServer.convertIntToBytes(4096);
+				raf.write(intBuf, 8, 4);
+				
+			}
+			else
+			{
+				raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
+			}
 			
+			raf.read(intBuf, 0, 4);
+			int numRecords = ChunkServer.convertBytesToInt(intBuf);
+			raf.read(intBuf, 4, 4);
+			int offset = ChunkServer.convertBytesToInt(intBuf);
+			raf.read(intBuf, 8, 4);
+			int endSpace = ChunkServer.convertBytesToInt(intBuf);
+			int size = payload.length;
+			if(offset + size + 8 > endSpace) //Too big of a payload; 8 because we need to write size of payload, and offset. 
+			{
+				raf.close();
+				return -1;
+			}
+			intBuf = ChunkServer.convertIntToBytes(size);
+			//Write record size
+			if(!writeChunk(ChunkHandle, intBuf, offset))
+			{
+				raf.close();
+				return -1;
+			}
+			//Write record
+			if(!writeChunk(ChunkHandle, payload, offset + 4))
+			{
+				raf.close();
+				return -1;
+			}
+			//Write metadata
+			//Write offset of current record
+			endSpace -= 4;
+			intBuf = ChunkServer.convertIntToBytes(offset);
+			if(!writeChunk(ChunkHandle, intBuf, endSpace))
+			{
+				raf.close();
+				return -1;
+			}
+			//Write numRecords
+			numRecords++;
+			intBuf = ChunkServer.convertIntToBytes(numRecords);
+			if(!writeChunk(ChunkHandle, intBuf, 0))
+			{
+				raf.close();
+				return -1;
+			}
+			//Write start of next record
+			offset = offset + size + 4;
+			intBuf = ChunkServer.convertIntToBytes(offset);
+			if(!writeChunk(ChunkHandle, intBuf, 4))
+			{
+				raf.close();
+				return -1;
+			}
+			//Write end of free space
+			intBuf = ChunkServer.convertIntToBytes(endSpace);
+			if(!writeChunk(ChunkHandle, intBuf, 8))
+			{
+				raf.close();
+				return -1;
+			}
+			
+			raf.close();
+			return numRecords;
 		} catch (IOException e) {
 			e.printStackTrace();
 			return -1;
 		}	
 	}
 	
-	public boolean deleteRecord(String ChunkHandle, int offset, int recordSize) {
+	public boolean deleteRecord(String ChunkHandle, int index) {
 		try {
-			
 			RandomAccessFile raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
-			raf.seek(offset);
-			byte[] payload = new byte[recordSize];
-			raf.write(payload);
+			byte [] intBuf = new byte[4];
+			raf.read(intBuf, 8, 4);
+			int endSpace = ChunkServer.convertBytesToInt(intBuf);
+			int offset = 4096 - (index + 1) * 4;
+			if(endSpace > offset)
+			{
+				raf.close();
+				return false;
+			}
+			intBuf = ChunkServer.convertIntToBytes(-1);
+			if(!writeChunk(ChunkHandle, intBuf, offset))
+			{
+				raf.close();
+				return false;
+			}
+			
 			raf.close();
 			
 		} catch (IOException e) {
@@ -251,20 +323,83 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		return true;
 	}
 	
-	public byte[] readRecord(String ChunkHandle, int first_or_last) {
-		if(!ChunkRIDMap.containsKey(ChunkHandle))
-			return null;
-		
-		RID record; 
-		if(first_or_last == 0) {
-			record = ChunkRIDMap.get(ChunkHandle).get(0);
-		} else {
-			int numRIDs = ChunkRIDMap.get(ChunkHandle).size();
-			record = ChunkRIDMap.get(ChunkHandle).get(numRIDs-1);
+	public byte[] readRecord(RID rid, boolean forward) 
+	{
+		String ChunkHandle = rid.ChunkHandle;
+		int index = rid.index;
+		byte [] payload = null;
+		byte [] intBuf = new byte[4];
+		boolean foundRecord = false;
+		try
+		{
+			RandomAccessFile raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
+			int indexOffset;
+			int offset = 0;
+			raf.read(intBuf, 8, 4);
+			int endSpace = ChunkServer.convertBytesToInt(intBuf);
+			while(!foundRecord)
+			{
+				indexOffset = 4096 - (index + 1) * 4;
+				//Error checking, making sure we're always checking a valid record
+				if(endSpace < indexOffset)
+				{
+					rid.index = -1;
+					return null;
+				}
+				if(index < 0)
+				{
+					rid.index = -1;
+					return null;
+				}
+				raf.read(intBuf, indexOffset, 4);
+				offset = ChunkServer.convertBytesToInt(intBuf);
+				//If deleted, move to the next record
+				if(offset == -1)
+				{
+					if(forward)
+					{
+						index++;
+					}
+					else
+					{
+						index--;
+					}
+				}
+				else
+				{
+					foundRecord = true;
+				}
+			}
+			raf.read(intBuf, offset, 4);
+			int size = ChunkServer.convertBytesToInt(intBuf);
+			payload = readChunk(ChunkHandle, offset + 4, size);
+			raf.close();
+			return payload;
 		}
-		return readChunk(ChunkHandle, record.getOffset(), record.getSize());
+		catch (IOException e) {
+			return null;
+		}
+		
+		
 	}
 	
+	public int getLastIndex(String ChunkHandle)
+	{
+		try {
+			//If the file corresponding to ChunkHandle does not exist then create it before writing into it
+			RandomAccessFile raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
+			byte [] intBuf = new byte[4];
+			raf.read(intBuf, 8, 4);
+			int endSpace = ChunkServer.convertBytesToInt(intBuf);
+			int index = (4096 - endSpace - 4) / 4;
+			
+			return index;
+			
+		} catch (IOException ex) {
+			ex.printStackTrace();
+			return -1;
+		}
+	}
 	
 
 	
@@ -307,6 +442,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		return;
 	}*/
 	
+
 	public synchronized void RenewLease(Lease lease)
 	{
 		//Ask master for lease renewal
@@ -401,14 +537,14 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		}
 	}
 	
-	public int calculateOffset(String ChunkHandle)
+	public static int convertBytesToInt(byte [] byteArray)
 	{
-		return 0;
+		return ByteBuffer.wrap(byteArray).getInt();
 	}
 	
-	public int getLastIndex(String ChunkHandle)
+	public static byte [] convertIntToBytes(int toBytes)
 	{
-		return 0;
+		return ByteBuffer.allocate(4).putInt(toBytes).array();
 	}
 	
 	public static String[] listChunks()

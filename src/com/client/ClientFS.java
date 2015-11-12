@@ -317,7 +317,7 @@ public class ClientFS {
 			//check if directory already exists with that name
 			//get confirmation that the directory was created at the master namespace level
 			response = (String) ReadInput.readObject();
-			if (response.equals("file_does_not_exist")) return FSReturnVals.FileExists;
+			if (response.equals("file_does_not_exist")) return FSReturnVals.FileDoesNotExist;
 			else if (response.equals("success")) return FSReturnVals.Success;
 			
 			

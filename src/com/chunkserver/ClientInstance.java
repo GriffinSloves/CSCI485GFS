@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 
 import com.client.Client;
+import com.client.RID;
 
 public class ClientInstance extends Thread
 {
@@ -20,6 +21,8 @@ public class ClientInstance extends Thread
 	public static final int DeleteRecord = 106;
 	public static final int ReadFirstRecord = 107;
 	public static final int ReadLastRecord = 108;
+	public static final int ReadNextRecord = 109;
+	public static final int ReadPreviousRecord = 110;
 	
 	//Replies provided by the server
 	public static final int TRUE = 1;
@@ -41,7 +44,12 @@ public class ClientInstance extends Thread
 		try {
 			ReadInput = new ObjectInputStream(ClientConnection.getInputStream());
 			WriteOutput = new ObjectOutputStream(ClientConnection.getOutputStream());
-			
+			int offset;
+			int payloadlength;
+			int chunkhandlesize;
+			byte[] CHinBytes;
+			byte[] payload;
+			RID rid;
 			//Use the existing input and output stream as long as the client is connected
 			while (!ClientConnection.isClosed()) {
 				int CMD = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
@@ -55,21 +63,21 @@ public class ClientInstance extends Thread
 					break;
 
 				case ReadChunkCMD:
-					int offset =  ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
-					int payloadlength =  ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
-					int chunkhandlesize = 1;
+					offset =  ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					payloadlength =  ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					chunkhandlesize = 1;
 					if (chunkhandlesize < 0)
 						System.out.println("Error in ChunkServer.java, ReadChunkCMD has wrong size.");
-					byte[] CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
+					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
 					String ChunkHandle = (new String(CHinBytes)).toString();
 					
-					byte[] res = cs.readChunk(ChunkHandle, offset, payloadlength);
+					payload = cs.readChunk(ChunkHandle, offset, payloadlength);
 					
-					if (res == null)
+					if (payload == null)
 						WriteOutput.writeInt(ChunkServer.PayloadSZ);
 					else {
-						WriteOutput.writeInt(ChunkServer.PayloadSZ + res.length);
-						WriteOutput.write(res);
+						WriteOutput.writeInt(ChunkServer.PayloadSZ + payload.length);
+						WriteOutput.write(payload);
 					}
 					WriteOutput.flush();
 					break;
@@ -77,23 +85,15 @@ public class ClientInstance extends Thread
 				case WriteChunkCMD:
 					
 					payloadlength =  ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
-					byte[] payload = ChunkServer.RecvPayload("ChunkServer", ReadInput, payloadlength);
+					payload = ChunkServer.RecvPayload("ChunkServer", ReadInput, payloadlength);
 					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
 					if (chunkhandlesize < 0)
 						System.out.println("Error in ChunkServer.java, WritehChunkCMD has wrong size.");
 					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
 					ChunkHandle = (new String(CHinBytes)).toString();
-					offset = cs.calculateOffset(ChunkHandle);
+			
 					//Call the writeChunk command
-					if (cs.writeChunk(ChunkHandle, payload, offset)) {
-						int index = cs.getLastIndex(ChunkHandle);
-						WriteOutput.writeInt(index);
-					}	
-					else //Write failed
-					{
-						WriteOutput.writeInt(-1);
-					}
-					
+					WriteOutput.writeInt(cs.append(ChunkHandle, payload));
 					WriteOutput.flush();
 					break;
 				case DeleteRecord:
@@ -101,7 +101,6 @@ public class ClientInstance extends Thread
 					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
 					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
 					ChunkHandle = (new String(CHinBytes)).toString();					
-					
 					if(cs.deleteRecord(ChunkHandle, recordIndex)) {
 						WriteOutput.writeInt(ChunkServer.TRUE); 
 					} else {
@@ -115,14 +114,16 @@ public class ClientInstance extends Thread
 					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
 					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
 					ChunkHandle = (new String(CHinBytes)).toString();
+					rid = new RID(ChunkHandle, 0);
+					//If read record failed, rid.index will be -1
+					payload = cs.readRecord(rid, true);
 					
-					res = cs.readFirstRecord(ChunkHandle);
-					
-					if (res == null)
-						WriteOutput.writeInt(ChunkServer.PayloadSZ);
+					if (payload == null)
+						WriteOutput.writeInt(-1);
 					else {
-						WriteOutput.writeInt(ChunkServer.PayloadSZ + res.length);
-						WriteOutput.write(res);
+						WriteOutput.writeInt(rid.index);
+						WriteOutput.writeInt(payload.length);
+						WriteOutput.write(payload);
 					}
 					WriteOutput.flush();
 					break;
@@ -131,19 +132,62 @@ public class ClientInstance extends Thread
 					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
 					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
 					ChunkHandle = (new String(CHinBytes)).toString();
+					int index = cs.getLastIndex(ChunkHandle);
+					rid = new RID(ChunkHandle, index);
+					payload = cs.readRecord(rid, false);
 					
-					res = cs.readLastRecord(ChunkHandle);
-					
-					if (res == null)
-						WriteOutput.writeInt(ChunkServer.PayloadSZ);
+					if (payload == null)
+						WriteOutput.writeInt(-1);
 					else {
-						WriteOutput.writeInt(ChunkServer.PayloadSZ + res.length);
-						WriteOutput.write(res);
+						WriteOutput.writeInt(rid.index);
+						WriteOutput.writeInt(payload.length);
+						WriteOutput.write(payload);
 					}
 					
 					WriteOutput.writeInt(cs.getLastIndex(ChunkHandle));
 					WriteOutput.flush();
 					break;
+				
+				case ReadNextRecord:
+					int previousIndex = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
+					ChunkHandle = (new String(CHinBytes)).toString();
+										
+					rid = new RID(ChunkHandle, previousIndex+1);
+					payload = cs.readRecord(rid, true);
+					
+					if(payload == null) {
+						WriteOutput.writeInt(-1);
+					} else {
+						WriteOutput.writeInt(rid.index);
+						WriteOutput.writeInt(payload.length);
+						WriteOutput.write(payload);
+					}
+
+					WriteOutput.flush();
+					break;
+					
+				case ReadPreviousRecord:
+					previousIndex = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
+					ChunkHandle = (new String(CHinBytes)).toString();
+										
+					rid = new RID(ChunkHandle, previousIndex-1);
+					payload = cs.readRecord(rid, false);
+					
+					if(payload == null) {
+						WriteOutput.writeInt(-1);
+					} else {
+						WriteOutput.writeInt(rid.index);
+						WriteOutput.writeInt(payload.length);
+						WriteOutput.write(payload);
+					}
+
+					WriteOutput.flush();
+					break;				
+					
 					
 				default:
 					System.out.println("Error in ChunkServer, specified CMD "+CMD+" is not recognized.");

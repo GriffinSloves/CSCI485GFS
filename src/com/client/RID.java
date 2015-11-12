@@ -8,5 +8,10 @@ public class RID {
 	public RID(){
 		
 	}
+
+	public RID(String ChunkHandle, int index) {
+		this.ChunkHandle = ChunkHandle;
+		this.index = index;
+	}
 	
 }

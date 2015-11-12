@@ -115,12 +115,10 @@ public class ClientRec {
 		if(ofh == null) { //how do we determine if a file handle is invalid?
 			return FSReturnVals.BadHandle;
 		}
-		if(RecordID == null) { //how do we determine if a RID is invalid
+		if(RecordID == null || RecordID.index == -1) { //how do we determine if a RID is invalid
 			return FSReturnVals.BadRecID;
 		}
-		
-		Vector<String> ChunkHandles = ofh.getChunkHandles();
-		String ChunkHandle = ChunkHandles.lastElement();
+		String ChunkHandle = RecordID.ChunkHandle;
 		byte[] CHinBytes = ChunkHandle.getBytes();
 		Location primaryLoc = ofh.getPrimaryLocation();
 		
@@ -164,37 +162,40 @@ public class ClientRec {
 		}
 		
 		Vector<String> ChunkHandles = ofh.getChunkHandles();
-		String ChunkHandle = ChunkHandles.firstElement();
-		byte[] CHinBytes = ChunkHandle.getBytes();
+		String ChunkHandle;
+		byte[] CHinBytes;
 		Location primaryLoc = ofh.getPrimaryLocation();
-		
+		boolean notFound = true;
 		try {
 			Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 			ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 			ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
-			
-			//WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
-			WriteOutputCS.writeInt(ClientInstance.ReadFirstRecord);
-			
-			WriteOutputCS.writeInt(CHinBytes.length);
-			WriteOutputCS.write(CHinBytes);
-			WriteOutputCS.flush();
-			
-			int ChunkSize =  Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
-			ChunkSize -= ChunkServer.PayloadSZ;  //reduce the length by the first four bytes that identify the length
-			
-			if(ChunkSize == 0) {
-				return FSReturnVals.RecDoesNotExist;
+			int index = 0;
+			for(int i = 0; i < ChunkHandles.size(); i++)
+			{
+				ChunkHandle = ChunkHandles.elementAt(i);
+				CHinBytes = ChunkHandle.getBytes();
+				//WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
+				WriteOutputCS.writeInt(ClientInstance.ReadFirstRecord);
+				
+				WriteOutputCS.writeInt(CHinBytes.length);
+				WriteOutputCS.write(CHinBytes);
+				WriteOutputCS.flush();
+				
+				index = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
+				if(index != -1) {
+					int size = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
+					payload = Client.RecvPayload("Client", ReadInputCS, size);
+
+					RecordID = new RID();
+					RecordID.index = index;
+					RecordID.ChunkHandle = ChunkHandle; 
+					
+					return FSReturnVals.Success;
+				}
 			}
 			
-			payload = Client.RecvPayload("Client", ReadInputCS, ChunkSize);
-
-			RecordID = new RID();
-			RecordID.index = 1;
-			RecordID.ChunkHandle = ChunkHandle; 
-			
-			return FSReturnVals.Success;
-			
+			return FSReturnVals.RecDoesNotExist;
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -215,8 +216,8 @@ public class ClientRec {
 		}
 		
 		Vector<String> ChunkHandles = ofh.getChunkHandles();
-		String ChunkHandle = ChunkHandles.lastElement();
-		byte[] CHinBytes = ChunkHandle.getBytes();
+		String ChunkHandle;
+		byte[] CHinBytes;
 		Location primaryLoc = ofh.getPrimaryLocation();
 		
 		try {
@@ -224,28 +225,30 @@ public class ClientRec {
 			ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 			ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 			
-			//WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
-			WriteOutputCS.writeInt(ClientInstance.ReadLastRecord);
-			
-			WriteOutputCS.writeInt(CHinBytes.length);
-			WriteOutputCS.write(CHinBytes);
-			WriteOutputCS.flush();
-			
-			int ChunkSize =  ReadInputCS.readInt();
-			ChunkSize -= ChunkServer.PayloadSZ;  //reduce the length by the first four bytes that identify the length
-			
-			if(ChunkSize == 0) {
-				return FSReturnVals.RecDoesNotExist;
+			for(int i = ChunkHandles.size()-1; i >= 0; i--){
+				ChunkHandle = ChunkHandles.lastElement();
+				CHinBytes = ChunkHandle.getBytes();
+				
+				//WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
+				WriteOutputCS.writeInt(ClientInstance.ReadLastRecord);
+				WriteOutputCS.writeInt(CHinBytes.length);
+				WriteOutputCS.write(CHinBytes);
+				WriteOutputCS.flush();
+				
+				int index =  Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
+				if(index != -1) {
+					int size = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
+					payload = Client.RecvPayload("Client", ReadInputCS, size);
+
+					RecordID = new RID();
+					RecordID.index = index;
+					RecordID.ChunkHandle = ChunkHandle; 
+								
+					return FSReturnVals.Success;
+				}
 			}
 			
-			payload = Client.RecvPayload("Client", ReadInputCS, ChunkSize); 
-			int index = ReadInputCS.readInt();
-			
-			RecordID = new RID();
-			RecordID.ChunkHandle = ChunkHandle;
-			RecordID.index = index;
-			
-			return FSReturnVals.Success;
+			return FSReturnVals.RecDoesNotExist;
 			
 			
 		} catch (IOException e) {
@@ -271,8 +274,10 @@ public class ClientRec {
 			return FSReturnVals.RecDoesNotExist;
 		}
 		
-		String ChunkHandle = pivot.ChunkHandle;
-		byte[] CHinBytes = ChunkHandle.getBytes();
+		Vector<String> ChunkHandles = ofh.getChunkHandles();
+		int indexOfChunkHandle = ofh.ChunkHandles.indexOf(pivot.ChunkHandle);
+		String ChunkHandle;
+		byte[] CHinBytes;
 		Location primaryLoc = ofh.getPrimaryLocation();
 		
 		try {
@@ -280,29 +285,34 @@ public class ClientRec {
 			ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 			ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 			
-			//WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
-			WriteOutputCS.writeInt(ClientInstance.ReadLastRecord);
-			
-			WriteOutputCS.writeInt(CHinBytes.length);
-			WriteOutputCS.write(CHinBytes);
-			WriteOutputCS.flush();
-			
-			int ChunkSize =  ReadInputCS.readInt();
-			ChunkSize -= ChunkServer.PayloadSZ;  //reduce the length by the first four bytes that identify the length
-			
-			if(ChunkSize == 0) {
-				return FSReturnVals.RecDoesNotExist;
+			for(int i = indexOfChunkHandle; i < ChunkHandles.size(); i++) {
+				//WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
+				ChunkHandle = ChunkHandles.get(indexOfChunkHandle);
+				CHinBytes = ChunkHandle.getBytes();
+				
+				WriteOutputCS.writeInt(ClientInstance.ReadNextRecord);		
+				WriteOutputCS.writeInt(pivot.index + 1); //should this be +1?
+				WriteOutputCS.writeInt(CHinBytes.length);
+				WriteOutputCS.write(CHinBytes);
+				WriteOutputCS.flush();
+				
+				int index = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
+				
+				if(index != -1) {
+					
+					int size = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
+					payload = Client.RecvPayload("ClientRec", ReadInputCS, size);
+					
+					RecordID = new RID();
+					RecordID.index = index;
+					RecordID.ChunkHandle = ChunkHandle;
+					
+					return FSReturnVals.Success;
+				}
+
 			}
-			
-			payload = Client.RecvPayload("Client", ReadInputCS, ChunkSize); 
-			int index = ReadInputCS.readInt();
-			
-			RecordID = new RID();
-			RecordID.ChunkHandle = ChunkHandle;
-			RecordID.index = index;
-			
-			return FSReturnVals.Success;
-			
+
+			return FSReturnVals.RecDoesNotExist;
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -310,7 +320,7 @@ public class ClientRec {
 			return FSReturnVals.Fail;
 		}
 		
-		return null;
+		
 	}
 
 	/**
@@ -322,7 +332,56 @@ public class ClientRec {
 	 * recn-1, rec, rec2) 3. ReadPrevRecord(FH1, recn-2, rec, rec3)
 	 */
 	public FSReturnVals ReadPrevRecord(FileHandle ofh, RID pivot, byte[] payload, RID RecordID) {
-		return null;
+		if(ofh.ChunkHandles.size() == 0) {
+			return FSReturnVals.BadHandle;
+		}
+		if(pivot.index < 0) {
+			return FSReturnVals.RecDoesNotExist;
+		}
+		
+		Vector<String> ChunkHandles = ofh.getChunkHandles();
+		int indexOfChunkHandle = ofh.ChunkHandles.indexOf(pivot.ChunkHandle);
+		String ChunkHandle;
+		byte[] CHinBytes;
+		Location primaryLoc = ofh.getPrimaryLocation();
+		
+		try {
+			Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
+			ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
+			ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
+			
+			for(int i = indexOfChunkHandle; i >= 0; i--) {
+				ChunkHandle = ChunkHandles.get(i);
+				CHinBytes = ChunkHandle.getBytes();
+				
+				//WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
+				WriteOutputCS.writeInt(ClientInstance.ReadPreviousRecord);		
+				WriteOutputCS.writeInt(pivot.index - 1); //should this be - 1?
+				WriteOutputCS.writeInt(CHinBytes.length);
+				WriteOutputCS.write(CHinBytes);
+				WriteOutputCS.flush();
+				
+				int index = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
+				
+				if(index != -1) {
+					int size = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
+					payload = Client.RecvPayload("ClientRec", ReadInputCS, size);
+					
+					RecordID = new RID();
+					RecordID.index = index;
+					RecordID.ChunkHandle = ChunkHandle;
+					
+					return FSReturnVals.Success;
+				}		
+			}
+			
+			return FSReturnVals.RecDoesNotExist;
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return FSReturnVals.Fail;
+		}
 	}
 
 
