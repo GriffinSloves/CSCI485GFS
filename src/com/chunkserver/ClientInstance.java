@@ -21,6 +21,8 @@ public class ClientInstance extends Thread
 	public static final int DeleteRecord = 106;
 	public static final int ReadFirstRecord = 107;
 	public static final int ReadLastRecord = 108;
+	public static final int ReadNextRecord = 109;
+	public static final int ReadPreviousRecord = 110;
 	
 	//Replies provided by the server
 	public static final int TRUE = 1;
@@ -145,6 +147,47 @@ public class ClientInstance extends Thread
 					WriteOutput.writeInt(cs.getLastIndex(ChunkHandle));
 					WriteOutput.flush();
 					break;
+				
+				case ReadNextRecord:
+					int previousIndex = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
+					ChunkHandle = (new String(CHinBytes)).toString();
+										
+					rid = new RID(ChunkHandle, previousIndex+1);
+					payload = cs.readRecord(rid, true);
+					
+					if(payload == null) {
+						WriteOutput.writeInt(-1);
+					} else {
+						WriteOutput.writeInt(rid.index);
+						WriteOutput.writeInt(payload.length);
+						WriteOutput.write(payload);
+					}
+
+					WriteOutput.flush();
+					break;
+					
+				case ReadPreviousRecord:
+					previousIndex = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
+					ChunkHandle = (new String(CHinBytes)).toString();
+										
+					rid = new RID(ChunkHandle, previousIndex-1);
+					payload = cs.readRecord(rid, false);
+					
+					if(payload == null) {
+						WriteOutput.writeInt(-1);
+					} else {
+						WriteOutput.writeInt(rid.index);
+						WriteOutput.writeInt(payload.length);
+						WriteOutput.write(payload);
+					}
+
+					WriteOutput.flush();
+					break;				
+					
 					
 				default:
 					System.out.println("Error in ChunkServer, specified CMD "+CMD+" is not recognized.");
