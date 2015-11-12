@@ -14,6 +14,7 @@ import java.util.Vector;
 
 import com.chunkserver.ChunkServer;
 
+import master.Location;
 import master.TFSMaster;
 
 public class ClientFS {
@@ -355,7 +356,7 @@ public class ClientFS {
 			Vector<String> chunksOfFile = (Vector<String>) ReadInput.readObject();
 			ofh.setHandles(chunksOfFile);
 			
-			HashMap<String, Vector<String>> locationsOfChunks = (HashMap<String, Vector<String>>) ReadInput.readObject();
+			HashMap<String, Vector<Location>> locationsOfChunks = (HashMap<String, Vector<Location>>) ReadInput.readObject();
 			ofh.setLocations(locationsOfChunks);
 			
 		} catch (IOException e) {
