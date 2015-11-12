@@ -34,10 +34,10 @@ public class TFSMaster{
 	public static Vector<String> filesThatHaveBeenDeleted;
 	
 	public static LinkedHashSet<String> namespace; //maps directory paths to IP address of chunk servers
-	public LinkedHashMap<String, Vector<String>> filesToChunkHandles; // maps which chunks constitute a file
-	public HashMap<String, Vector<Location>> chunkHandlesToServers; //maps chunk handles to locations of their replicas(CS IP addresses)
-	public HashMap<String, Lease> ChunkLeaseMap;
-	public HashMap<Lease, String> LeaseServerMap;
+	public static LinkedHashMap<String, Vector<String>> filesToChunkHandles; // maps which chunks constitute a file
+	public static HashMap<String, Vector<Location>> chunkHandlesToServers; //maps chunk handles to locations of their replicas(CS IP addresses)
+	public static HashMap<String, Lease> ChunkLeaseMap;
+	public static HashMap<Lease, String> LeaseServerMap;
 	
 	
 	public static final String nameSpaceFile = "namespace.txt";
@@ -47,6 +47,7 @@ public class TFSMaster{
 	public TFSMaster()
 	{
 		namespace = new LinkedHashSet<String>();
+		System.out.println("Instantiated namespace");
 		filesToChunkHandles = new LinkedHashMap<String, Vector<String>>();
 		chunkHandlesToServers = new HashMap<String, Vector<Location>>();
 		filesThatHaveBeenDeleted = new Vector<String>();
@@ -265,7 +266,7 @@ public class TFSMaster{
 		}
 		
 		
-		//iterate through namespace and find all matches where the src/destinationToDelete is a substring
+		//iterate through namespace and find all matches where the src/destinationTo is a substring
 		//this will capture all files/directories within the directory to be deleted
 		Iterator it = (Iterator) namespace.iterator();
 		while (it.hasNext())
@@ -494,6 +495,7 @@ public class TFSMaster{
 					//System.out.println("checking if: " + toCheck+ " begins w/ " + srcDirectory+dirname);
 					if (toCheck.startsWith(srcDirectory+dirname))
 					{
+						System.out.println("will delete: " + toCheck);
 						//if its a match add to list of deleted (will be sent to ChunkServers via heartbeat message)
 						//then delete it from the namespace
 						filesThatHaveBeenDeleted.add(toCheck);
@@ -543,6 +545,7 @@ public class TFSMaster{
 			
 			
 			//check if source exists
+			System.out.println(namespace.size());
 			boolean checkSrcExists = (namespace.contains(src) || namespace.contains(src+"/"));
 			if (!checkSrcExists)
 			{
