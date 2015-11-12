@@ -365,11 +365,11 @@ public class TFSMaster{
 					{
 						renameDir();
 					}
-					if (command.equals("openFile"))
+					if (command.equals("OpenFile"))
 					{
 						openFile();
 					}
-					if (command.equals("CreateDir"))
+					if (command.equals("CloseFile"))
 					{
 						closeFile();
 					}
