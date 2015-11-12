@@ -20,6 +20,9 @@ public class UnitTest2 {
 	public static void test2(ClientFS cfs){
 		UnitTest1 ut1 = new UnitTest1();
 		ut1.test1(cfs);
+		
+		cfs.displayNamespace();
+		
 		int N = ut1.N;
 		String dir1 = "Shahram";
 		FSReturnVals fsrv = cfs.DeleteDir("/" + dir1 + "/", String.valueOf(N));
