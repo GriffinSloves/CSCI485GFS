@@ -47,7 +47,6 @@ public class TFSMaster{
 	public TFSMaster()
 	{
 		namespace = new LinkedHashSet<String>();
-		System.out.println("Instantiated namespace");
 		filesToChunkHandles = new LinkedHashMap<String, Vector<String>>();
 		chunkHandlesToServers = new HashMap<String, Vector<Location>>();
 		filesThatHaveBeenDeleted = new Vector<String>();
@@ -485,7 +484,6 @@ public class TFSMaster{
 				
 				//iterate through namespace and find all matches where the src/destinationToDelete is a substring
 				//this will capture all files/directories within the directory to be deleted
-				
 				int directoriesFoundToDelete = 0;
 				Iterator it = (Iterator) namespace.iterator();
 				while (it.hasNext())
@@ -495,34 +493,20 @@ public class TFSMaster{
 					//System.out.println("checking if: " + toCheck+ " begins w/ " + srcDirectory+dirname);
 					if (toCheck.startsWith(srcDirectory+dirname))
 					{
-						System.out.println("will delete: " + toCheck);
-						//if its a match add to list of deleted (will be sent to ChunkServers via heartbeat message)
-						//then delete it from the namespace
-						filesThatHaveBeenDeleted.add(toCheck);
 						directoriesFoundToDelete++;
-						
-						//log the delete operation
-						//append this create operation to the logfile
-						if(master.currentLogFile == null) System.out.println("Cannot append to log, current log == null");
-						FileOutputStream fos = new FileOutputStream(master.currentLogFile);
-						PrintWriter pw = new PrintWriter(fos); 
-						pw.println("deleteDir:"+srcDirectory+"/"+dirname);//create log record of create operation
-						pw.close();
-						
-						//remove from namespace
-						it.remove();
 					}
 				}
-				//System.out.println(directoriesFoundToDelete);
 				//send response to ClientFS
 				if (directoriesFoundToDelete > 1)
 				{
-					oos.writeObject("success_dir_not_empty");
+					oos.writeObject("dir_not_empty");
 					oos.flush();
 				}
 				else{
 					oos.writeObject("success");
 					oos.flush();
+					//remove the namespace from directory
+					namespace.remove(srcDirectory+dirname+"/");
 				}
 				
 			}catch (IOException IOE){

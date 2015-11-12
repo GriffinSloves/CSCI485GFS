@@ -144,7 +144,7 @@ public class ClientFS {
 			response = (String) ReadInput.readObject();
 			//System.out.println("DeleteResponse on CFS: " + response);
 			if (response.equals("success")) return FSReturnVals.Success;
-			else if (response.equals("success_dir_not_empty")) return FSReturnVals.DirNotEmpty;
+			else if (response.equals("dir_not_empty")) return FSReturnVals.DirNotEmpty;
 			
 		} catch (IOException e) {
 			e.printStackTrace();
