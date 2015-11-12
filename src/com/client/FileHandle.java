@@ -16,6 +16,9 @@ public class FileHandle {
 	{
 		this.fileName = name;
 	}
+	public String getFileName(){
+		return this.fileName;
+	}
 	public void setHandles(Vector<String> chunksOfFile)
 	{
 		this.chunkHandles = chunksOfFile;

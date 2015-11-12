@@ -305,7 +305,7 @@ public class ClientFS {
 			
 			//if the src directory doesn't exist, return the error
 			String response = (String) ReadInput.readObject();
-			if (response.equals("does_not_exist")) return FSReturnVals.SrcDirNotExistent;
+			if (response.equals("src_does_not_exist")) return FSReturnVals.SrcDirNotExistent;
 			
 			//write the target directory name to master so it can update the namespace
 			WriteOutput.writeObject(filename);
@@ -314,7 +314,7 @@ public class ClientFS {
 			//check if directory already exists with that name
 			//get confirmation that the directory was created at the master namespace level
 			response = (String) ReadInput.readObject();
-			if (response.equals("file_exists")) return FSReturnVals.FileExists;
+			if (response.equals("file_does_not_exist")) return FSReturnVals.FileExists;
 			else if (response.equals("success")) return FSReturnVals.Success;
 			
 			
@@ -338,13 +338,18 @@ public class ClientFS {
 		
 		ofh.setFileName(FilePath);
 		try {
-			//send open command to server
-			WriteOutput.writeObject("open");
+			//send command to master
+			WriteOutput.writeObject("OpenFile");
 			WriteOutput.flush();
 			
 			//tell the server which file
 			WriteOutput.writeObject(FilePath);
 			WriteOutput.flush();
+			
+			String response = (String) ReadInput.readObject();
+			if(response.equals("file_does_not_exist")){
+				return FSReturnVals.FileDoesNotExist;
+			}
 			
 			//load the list of chunks into filehandle object
 			Vector<String> chunksOfFile = (Vector<String>) ReadInput.readObject();
@@ -360,8 +365,7 @@ public class ClientFS {
 		}
 		
 		
-		return null;
-	}
+		return null;	}
 
 	/**
 	 * Closes the specified file handle Returns BadHandle if ofh is invalid
@@ -369,6 +373,34 @@ public class ClientFS {
 	 * Example usage: CloseFile(FH1)
 	 */
 	public FSReturnVals CloseFile(FileHandle ofh) {
+		try {
+			//send command to master
+			WriteOutput.writeObject("CloseFile");
+			WriteOutput.flush();
+			
+			//tell the server which filehandle
+			WriteOutput.writeObject(ofh);
+			WriteOutput.flush();
+			
+			String response = (String) ReadInput.readObject();
+			if(response.equals("invalid")){
+				return FSReturnVals.BadHandle;
+			}
+			
+			//load the list of chunks into filehandle object
+			ofh.setHandles(null);
+			
+			ofh.setLocations(null);
+			
+			ofh.setFileName(null);
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+		
 		return null;
 	}
 	

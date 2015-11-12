@@ -646,8 +646,21 @@ public class TFSMaster{
 				//read which file wants to be opened
 				String filePath = (String) ois.readObject();
 				
+				
 				//use lookup table to get handles of all chunks of that file
 				Vector<String> chunksOfFile = filesToChunkHandles.get(filePath);
+				
+				if(chunksOfFile==null){
+					//send confirmation that file does not exist
+					oos.writeObject("file_does_not_exist");
+					oos.flush();
+					return;
+				}
+				else{
+					//send confirmation that file exists
+					oos.writeObject("file_exists");
+					oos.flush();
+				}
 				
 				//send back to ClientFS to be loaded into the Filehandle object
 				oos.writeObject(chunksOfFile);
@@ -670,19 +683,124 @@ public class TFSMaster{
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
-			}
-		}
+			}		}
 		public void closeFile()
 		{
-			
+			try {
+				//read which file wants to be opened
+				FileHandle fileHandle = (FileHandle) ois.readObject();
+				
+				String filePath = fileHandle.getFileName();
+				
+				//use lookup table to get handles of all chunks of that file
+				Vector<String> chunksOfFile = filesToChunkHandles.get(filePath);
+				
+				if(chunksOfFile==null){
+					//send confirmation that file does not exist or is invalid
+					oos.writeObject("invalid");
+					oos.flush();
+					return;
+				}
+				else{
+					//send confirmation that file exists
+					oos.writeObject("file_exists");
+					oos.flush();
+				}
+				
+				
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 		public void createFile()
 		{
+			try{
+				//check if the src doesn't exist
+				String tgtdir = (String) ois.readObject();
+				
+				//System.out.println("Start - Source is: " + srcDirectory);
+				boolean checkSrcExists = namespace.contains(tgtdir);//if this returns null, there is no match
+				if (!checkSrcExists) {
+					oos.writeObject("does_not_exist");
+					oos.flush();
+					System.out.println(tgtdir +" does_not_exist");
+					return;
+				}
+				else{
+					oos.writeObject("x"); //because the client is still waiting for a response
+					oos.flush(); //send "" to clear the readObject command in ClientFS
+				}
 			
+			
+				//check if file already exists
+				String fileName = (String) ois.readObject();
+				boolean checkFileExists = namespace.contains(tgtdir+"/"+fileName);//if this returns null, there is no match
+				if (checkFileExists) {
+					oos.writeObject("file_exists");
+					oos.flush();
+					System.out.println("file_exists");
+					return;
+				}
+				else{
+					//add the file to the namespace
+					namespace.add(tgtdir+fileName);
+					
+					//send confirmation
+					oos.writeObject("success");
+					oos.flush();
+				}
+			
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+			}
 		}
 		public void deleteFile()
 		{
+			try{
+				//check if the src doesn't exist
+				String tgtdir = (String) ois.readObject();
+				
+				//System.out.println("Start - Source is: " + srcDirectory);
+				boolean checkSrcExists = namespace.contains(tgtdir);//if this returns null, there is no match
+				if (!checkSrcExists) {
+					oos.writeObject("src_does_not_exist");
+					oos.flush();
+					System.out.println(tgtdir +" src_does_not_exist");
+					return;
+				}
+				else{
+					oos.writeObject("x"); //because the client is still waiting for a response
+					oos.flush(); //send "" to clear the readObject command in ClientFS
+				}
 			
+			
+				//check if file already exists
+				String fileName = (String) ois.readObject();
+				boolean checkFileExists = namespace.contains(tgtdir+"/"+fileName);//if this returns null, there is no match
+				if (!checkFileExists) {
+					oos.writeObject("file_does_not_exist");
+					oos.flush();
+					System.out.println("file_does_not_exist");
+					return;
+				}
+				else{
+					//remove the file from the namespace
+					namespace.remove(tgtdir+fileName);
+					
+					//send confirmation
+					oos.writeObject("success");
+					oos.flush();
+				}
+			
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+			}
 		}
 	}
 
