@@ -1,6 +1,7 @@
 package master;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -32,7 +33,7 @@ import com.client.FileHandle;
 public class TFSMaster{
 	
 	public final static String MasterConfigFile = "MasterConfig.txt";
-	public static String currentLogFile = "log1.txt";
+	public static String currentLogFile;
 	public static Vector<String> filesThatHaveBeenDeleted;
 	
 	public static LinkedHashSet<String> namespace; //maps directory paths to IP address of chunk servers
@@ -45,6 +46,7 @@ public class TFSMaster{
 	public static final String nameSpaceFile = "namespace.txt";
 	public static final String filesToChunkHandlesFile = "filesToChunkHandles.txt";
 	public static final String chunkHandlesToServersFile = "chunkHandlesToServers.txt";
+	public static int logSize = 0; public static int logNumber;
 	
 	public TFSMaster()
 	{
@@ -54,6 +56,7 @@ public class TFSMaster{
 		filesThatHaveBeenDeleted = new Vector<String>();
 		
 		//read all metadata from files on startup
+		readMasterConfig();
 		readMetaData();
 		ServerSocket ss = null;
 		try{
@@ -67,6 +70,31 @@ public class TFSMaster{
 			}
 		}
 		catch (IOException ioe) {ioe.printStackTrace();}
+	}
+	public void readMasterConfig()
+	{
+		FileReader fr;
+		BufferedReader br;
+		try{
+			fr = new FileReader(MasterConfigFile);
+			br = new BufferedReader(fr);
+			
+			//read the number of the log file that is most current
+			String logNum = br.readLine();
+			this.logNumber = Integer.parseInt(logNum);
+			
+			//set the current log file
+			this.currentLogFile = "log"+logNumber+".txt";
+			
+			br.close();fr.close();
+		}catch (FileNotFoundException e) {
+			System.out.print("FNFE while reading MasterConfig info");
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.print("IOE while reading MasterConfig info");
+			e.printStackTrace();
+		}
+		
 	}
 	
 	public void readNameSpace()
@@ -103,8 +131,8 @@ public class TFSMaster{
 		try{
 				fr = new FileReader(filesToChunkHandlesFile);
 				br = new BufferedReader(fr);
-				
-				while(br.readLine() != null)
+				String temp = br.readLine();
+				while(temp != null)
 				{
 					StringTokenizer str = new StringTokenizer(br.readLine(),":");//read each entry from file
 					String fileName = str.nextToken();//the first token should be the file name;
@@ -116,6 +144,7 @@ public class TFSMaster{
 					}
 					//add each entry to the HashMap
 					this.filesToChunkHandles.put(fileName, chunksInFile);
+					temp = br.readLine();
 				}
 		}
 		catch (FileNotFoundException e) {
@@ -177,20 +206,14 @@ public class TFSMaster{
 	}
 	public void applyLog()
 	{
-		if (currentLogFile == null)//if the master is starting up fresh
-		{
-			File logFile = new File("logfile1.txt");//create a new logfile
-			currentLogFile ="logfile1.txt";//set the currentLogFile
-		}
 		try {
 			FileReader fr = new FileReader(currentLogFile);
 			BufferedReader br = new BufferedReader(fr);
-				
+			String logLine = br.readLine();
 			//read through logfile and apply operations
 			//should be in format: create:srcDirectoryName:directoryToCreateName
-			while (br.readLine()!= null)
+			while (logLine!= null)
 			{
-				String logLine = br.readLine();//read each line of the log
 				StringTokenizer str = new StringTokenizer(logLine);
 				String command = str.nextToken();//the first token is the command
 				
@@ -198,11 +221,11 @@ public class TFSMaster{
 				{
 					createFromLog(str);
 				}
-				if (command.equals("rename"))
+				if (command.equals("renameDir"))
 				{
-					
+					renameFromLog(str);
 				}
-				if (command.equals("delete"))
+				if (command.equals("deleteDir"))
 				{
 					deleteFromLog(str);
 				}
@@ -214,6 +237,7 @@ public class TFSMaster{
 				{
 						
 				}
+				logLine = br.readLine();//read each line of the log
 			}		
 		} catch (FileNotFoundException e) {
 			System.out.println("FNFE: Error reading MasterConfig to find current log");
@@ -231,59 +255,120 @@ public class TFSMaster{
 		String src = str.nextToken();
 		String directoryToCreateName = str.nextToken();
 		
-		//check if the src doesn't exist
-		boolean checkSrcExists = namespace.contains(src);//if this returns null, there is no match
-		if (!checkSrcExists) {
-			System.out.println("Source directory: "+ src +" does not exist.");
-			return;
-		}
-		
-		//check if directory exists
-		boolean checkDirExists = namespace.contains(src+"/"+directoryToCreateName);//if this returns null, there is no match
-		if (checkDirExists) {
-			System.out.println("Source directory: "+ src+"/"+directoryToCreateName +" already exists.");
-			return;
-		}
-		
 		//create the directory in the namespace
-		namespace.add(src+"/"+directoryToCreateName);
+		namespace.add(src+directoryToCreateName+"/");
+		
+		//add the information to the persistent namespace file
+		try {
+			FileWriter fw = new FileWriter(nameSpaceFile);
+			PrintWriter pw = new PrintWriter(fw);
+			pw.println(src+directoryToCreateName+"/");
+			pw.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 	}
 	public void deleteFromLog(StringTokenizer str)
 	{
 		String src = str.nextToken();
 		String directoryToDelete = str.nextToken();
-		//check if the src doesn't exist
-		boolean checkSrcExists = namespace.contains(src);//if this returns null, there is no match
-		if (!checkSrcExists) {
-			System.out.println("Source directory: "+ src +" does not exist.");
-			return;
+		
+		//remove the entry from namespace in main memory
+		namespace.remove(src+directoryToDelete);
+		
+		//apply the changes to the persistent file
+		try {
+			
+			//update the namespace file by writing it out to temp minus the deleted namespace
+			File oldnamespace = new File(nameSpaceFile);
+			File newnamespace = new File("temp-namespace.txt");
+			
+			BufferedReader br = new BufferedReader(new FileReader(oldnamespace));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(newnamespace));
+			
+			//the entry that was deleted
+			String searchingFor = src+directoryToDelete;
+			String currentLine;
+			
+			while ((currentLine = br.readLine())!= null)
+			{
+				if (currentLine.equals(searchingFor))continue; //skip it if its supposed to be deleted
+				bw.write(currentLine+System.getProperty("line.separator"));//write with an endline separator
+			}
+			
+			bw.close();
+			br.close();
+			oldnamespace.delete(); //delete the oldnamespacefile
+			boolean success = newnamespace.renameTo(oldnamespace);//rename it back to the old namespace.txt file
+			
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 		
-		//check if directory exists
-		boolean checkDirExists = namespace.contains(src+"/"+directoryToDelete);//if this returns null, there is no match
-		if (!checkDirExists) {
-			System.out.println("Directory to be deleted doesn't exist");
-			return;
-		}
 		
+	}
+	public void renameFromLog(StringTokenizer str){
 		
-		//iterate through namespace and find all matches where the src/destinationTo is a substring
-		//this will capture all files/directories within the directory to be deleted
-		Iterator it = (Iterator) namespace.iterator();
+		String src = str.nextToken();
+		String newName = str.nextToken();
+		
+		Vector<String> newNamestoAdd = new Vector<String>();
+		Iterator it = namespace.iterator();
 		while (it.hasNext())
 		{
-			//check if src/dest is a substring
-			String toCheck = (String) it.next();
-			if (toCheck.startsWith(src+"/"+directoryToDelete))
+			String temp = (String) it.next();//iterate through each namespace entry
+			if (temp.startsWith(src+"/"))
 			{
-				//if its a match add to list of deleted (will be sent to ChunkServers via heartbeat message)
-				//then delete it from the namespace
-				filesThatHaveBeenDeleted.add(toCheck);
-				namespace.remove(toCheck);
+				int srcLength = src.length();//get the length of the sourceDir path
+				srcLength++; //to account for / character
+				
+				//store everything after src/
+				//example - from src/a/b/c/d/e/f.txt get /b/c/d/e/f.txt
+				String afterSrc = temp.substring(srcLength, temp.length());
+				
+				//add the renamed path
+				String renamedPath = newName+"/"+afterSrc;
+				newNamestoAdd.add(renamedPath);
+				
+				//remove the old entry from the namespace
+				it.remove();
 			}
 		}
+		
+		//add back all the newly named paths to namespace
+		for (int i = 0; i < newNamestoAdd.size(); i++)
+		{
+			namespace.add(newNamestoAdd.get(i));
+		}
+		
+		//write out namespace to persistent file
+		//update the namespace file by writing it out to temp minus the deleted namespace
+		File newnamespace = new File("temp-namespace.txt");
+		
+		try {
+			BufferedWriter bw = new BufferedWriter(new FileWriter(newnamespace));
+			
+			it = namespace.iterator();
+			while (it.hasNext())
+			{
+				String temp = (String) it.next();
+				bw.write(temp+System.getProperty("line.separator"));//write each entry and newline char
+			}
+			
+			bw.close();
+			File oldnamespace = new File(nameSpaceFile);
+			oldnamespace.delete(); //delete the oldnamespacefile
+			boolean success = newnamespace.renameTo(oldnamespace);//assign the new file to namespace.txt
+			
+			
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 	}
-	public void renameFromLog(){}
 	public void deleteFilefromLog(){}
 	public void createFileFromLog(){}
 	
@@ -507,6 +592,13 @@ public class TFSMaster{
 				else{
 					oos.writeObject("success");
 					oos.flush();
+					
+					//write the delete to the log
+					FileWriter fw = new FileWriter(currentLogFile,true);//open file in append only mode
+					BufferedWriter bw = new BufferedWriter(fw);
+					bw.write("deleteDir:"+srcDirectory+":"+dirname+"/");
+					bw.close();
+					
 					//remove the namespace from directory
 					namespace.remove(srcDirectory+dirname+"/");
 				}
@@ -521,32 +613,11 @@ public class TFSMaster{
 		{
 			String src = (String) ois.readObject();
 			System.out.println("Master RenameDir Src: "+src);
-			
-			Iterator it = namespace.iterator();
-			while (it.hasNext())
-			{
-				String temp = (String) it.next();
-				System.out.println(temp);
-			}
-			
-			
-			//check if source exists
-			System.out.println(namespace.size());
-			System.out.println("src = " + src);
+			Iterator it;
 
 			boolean checkSrcExists = (namespace.contains(src) || namespace.contains(src+"/"));
 			if (!checkSrcExists)
 			{
-				System.out.println(src+" and "+src+"/ both don't exist in namespace");
-				
-				System.out.println("Begin List Namespace:");
-				it = namespace.iterator();
-				while (it.hasNext())
-				{
-					String temp = (String) it.next();
-					System.out.println(temp);
-				}
-				System.out.println("End List Namespace:");
 				oos.writeObject("does_not_exist");
 				oos.flush();
 				return;
@@ -572,8 +643,13 @@ public class TFSMaster{
 			
 			//remove the old directory from the namespace and rename
 			//must also rename any directory beginning w/ src/oldName
-			/*Iterator*/ 
 			//System.out.println("Finding directory paths that start with: " + src);
+			
+			//Writes to logfile
+			FileWriter fw = new FileWriter(currentLogFile,true);//open file in append only mode
+			BufferedWriter bw = new BufferedWriter(fw);
+			
+			
 			Vector<String> newNamestoAdd= new Vector<String>();
 			it = namespace.iterator();
 			while (it.hasNext())
@@ -588,6 +664,9 @@ public class TFSMaster{
 					//example - from src/a/b/c/d/e/f.txt get /b/c/d/e/f.txt
 					String afterSrc = temp.substring(srcLength, temp.length());
 					
+					//write to the log
+					bw.write("renameDir:"+src+":"+newName);
+					
 					//add the renamed path
 					String renamedPath = newName+"/"+afterSrc;
 					newNamestoAdd.add(renamedPath);
@@ -595,7 +674,7 @@ public class TFSMaster{
 					//remove the old entry from the namespace
 					it.remove();
 				}
-			}
+			}bw.close();
 			
 			//add back all the newly named paths to namespace
 			for (int i = 0; i < newNamestoAdd.size(); i++)
@@ -702,31 +781,26 @@ public class TFSMaster{
 		
 		public void closeFile()
 		{
-			/*try {
+			try {
 				//read which file wants to be opened
 				String fileName = (String) ois.readObject();
 				Vector<String> chunksOfFile = (Vector<String>) ois.readObject();
-				HashMap<String, Vector<Location>> locationsOfChunks = ofh.getLocations();
-				ois.readObject();
 				
-				if(chunksOfFile==null){
-					//send confirmation that file does not exist or is invalid
-					oos.writeObject("invalid");
-					oos.flush();
-					return;
-				}
-				else{
-					//send confirmation that file exists
-					oos.writeObject("file_exists");
-					oos.flush();
-				}
+				//remove old mapping and add new key,value pair
+				System.out.println("removing "+fileName+" mapping from master.");
+				filesToChunkHandles.remove(fileName);
+				filesToChunkHandles.put(fileName, chunksOfFile);
+				System.out.println("Updated "+fileName+" mapping from master.");
+				
+				oos.writeObject("success");
+				oos.flush();
 				
 				
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
-			}*/
+			}
 		}
 		public void createFile()
 		{

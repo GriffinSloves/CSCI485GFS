@@ -383,9 +383,8 @@ public class ClientFS {
 			
 			String fileName = ofh.getFileName();
 			Vector<String> chunksOfFile = ofh.getChunkHandles();
-			HashMap<String, Vector<Location>> locationsOfChunks = ofh.getLocations();
 			
-			if(fileName == null || chunksOfFile == null || locationsOfChunks == null){
+			if(fileName == null || chunksOfFile == null){
 				return FSReturnVals.BadHandle;
 			}
 			
@@ -395,19 +394,16 @@ public class ClientFS {
 			WriteOutput.writeObject(chunksOfFile);
 			WriteOutput.flush();
 			
-			
-			WriteOutput.writeObject(locationsOfChunks);
-			WriteOutput.flush();
-			
-			
-			
-			
+			String response = (String) ReadInput.readObject();
+			if (response.equals("success")) return FSReturnVals.Success;
+				
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
 		
-		
-		return FSReturnVals.Success;
+		return null;
 	}
 	
 	public void displayNamespace(){
