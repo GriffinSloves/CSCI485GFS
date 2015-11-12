@@ -17,6 +17,8 @@ public class UnitTest3 {
 		UnitTest2 ut2 = new UnitTest2();
 		ut2.test2(cfs);
 
+		//cfs.displayNamespace();
+		
 		String dir1 = "ShahramGhandeharizadeh";
 		FSReturnVals fsrv = cfs.CreateDir("/" + dir1 + "/", "CSCI485");
 		if( fsrv != FSReturnVals.Success ){

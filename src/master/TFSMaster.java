@@ -589,7 +589,7 @@ public class TFSMaster{
 					String afterSrc = temp.substring(srcLength, temp.length());
 					
 					//add the renamed path
-					String renamedPath = newName+afterSrc;
+					String renamedPath = newName+"/"+afterSrc;
 					newNamestoAdd.add(renamedPath);
 					
 					//remove the old entry from the namespace
