@@ -16,8 +16,8 @@ public class ChunkServerInstance extends Thread
 	private ObjectOutputStream WriteOutput;
 	private ObjectInputStream ReadInput;
 	
-	private String IPAddress = null;
-	private int port;
+	
+	private Location loc;
 	
 	public ChunkServerInstance(TFSMaster master, Socket CSConnection)
 	{
@@ -27,8 +27,13 @@ public class ChunkServerInstance extends Thread
 		{
 			WriteOutput = new ObjectOutputStream(CSConnection.getOutputStream());
 			ReadInput = new ObjectInputStream(CSConnection.getInputStream());
-			IPAddress = CSConnection.getInetAddress().getHostAddress();
-			port = CSConnection.getPort();
+			String IPAddress = (String)ReadInput.readObject();
+			int port = ReadInput.readInt();
+			loc = new Location(IPAddress, port);
+		}
+		catch(ClassNotFoundException cnfe)
+		{
+			System.out.println(cnfe.getMessage());
 		}
 		catch (IOException ex){
 			System.out.println("Client Disconnected");
@@ -62,7 +67,7 @@ public class ChunkServerInstance extends Thread
 				switch(code){
 				case 201: //Heartbeat message
 					ChunkHandles = (String [])ReadInput.readObject();
-					DeletedChunks = master.updateChunkLocations(IPAddress, ChunkHandles);
+					DeletedChunks = master.updateChunkLocations(loc, ChunkHandles);
 					WriteOutput.writeObject(DeletedChunks);
 					WriteOutput.flush();
 					break;
@@ -70,7 +75,7 @@ public class ChunkServerInstance extends Thread
 					size = Client.ReadIntFromInputStream("Master", ReadInput);
 					byteArray = Client.RecvPayload("Master", ReadInput, size);
 					ChunkHandle = new String(byteArray);
-					if(master.renewLease(IPAddress, ChunkHandle))
+					if(master.renewLease(loc, ChunkHandle))
 					{
 						WriteOutput.writeInt(1);
 					}

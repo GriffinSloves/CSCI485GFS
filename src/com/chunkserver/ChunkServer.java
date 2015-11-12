@@ -86,9 +86,14 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		}
 		try
 		{
+			ss = new ServerSocket(0);
+			int port = ss.getLocalPort();
 			MasterConnection = new Socket(MasterIPAddress, MasterPort);
 			WriteOutput = new ObjectOutputStream(MasterConnection.getOutputStream());
 			ReadInput = new ObjectInputStream(MasterConnection.getInputStream());
+			WriteOutput.writeObject(ss.getInetAddress().getHostAddress());
+			WriteOutput.writeInt(port);
+			WriteOutput.flush();
 		}
 		catch(IOException ex)
 		{
@@ -109,7 +114,8 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		
 		//Write to Master all of the chunkhandles being stored on this chunkserver
 		//Every second, check which leases are expiring and renew the necessary ones
-	
+		RenewLeaseThread rlt = new RenewLeaseThread(this);
+		rlt.start();
 	}
 	
 	
@@ -117,18 +123,6 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	{
 		try
 		{
-			int ServerPort = 0;
-			try {
-				//Allocate a port and write it to the config file for the Client to consume
-				ss = new ServerSocket(ServerPort);
-				ServerPort=ss.getLocalPort();
-				PrintWriter outWrite=new PrintWriter(new FileOutputStream(ClientConfigFile));
-				outWrite.println("localhost:"+ServerPort);
-				outWrite.close();
-			} catch (IOException ex) {
-				System.out.println("Error, failed to open a new socket to listen on.");
-				ex.printStackTrace();
-			}
 			
 			while(true)
 			{
@@ -405,6 +399,16 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			File file = new File(filePath + ChunkHandleList[i]);
 			file.delete();
 		}
+	}
+	
+	public int calculateOffset(String ChunkHandle)
+	{
+		return 0;
+	}
+	
+	public int getLastIndex(String ChunkHandle)
+	{
+		return 0;
 	}
 	
 	public static String[] listChunks()

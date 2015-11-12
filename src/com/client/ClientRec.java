@@ -7,34 +7,42 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Vector;
 
 import com.chunkserver.ChunkServer;
 import com.client.ClientFS.FSReturnVals;
 import com.chunkserver.ClientInstance;
 import com.client.Client;
+
+import master.Location;
 import master.TFSMaster;
 
 //TODO connect sockets during each operation depending on where the chunkserver is located
 // Can't connect in instructor because we do not know the location that we want to connect to
 
 public class ClientRec {
-	static int ServerPort = 0;
-	static Socket ClientSocket;
-	static ObjectOutputStream WriteOutput;
-	static ObjectInputStream ReadInput;
+	static Socket MasterConnection;
+	static ObjectOutputStream WriteOutputMaster;
+	static ObjectInputStream ReadInputMaster;
+	public static final String MasterIPAddress = "127.0.0.1";
+	public static final int MasterPort = 6789;
 	
 	public ClientRec() { //Will have to change. 
 						 //The client will connect to different chunk servers depending on which one as the data
-		if (ClientSocket != null) return; //The client is already connected
+		if (MasterConnection != null) return; //The client is already connected
 		try {
 			BufferedReader binput = new BufferedReader(new FileReader(ChunkServer.ClientConfigFile));
 			String port = binput.readLine();
 			port = port.substring( port.indexOf(':')+1 );
-			ServerPort = Integer.parseInt(port);
+			int ServerPort = Integer.parseInt(port);
 			
-			ClientSocket = new Socket("127.0.0.1", ServerPort); //should client be reading from config?
-			WriteOutput = new ObjectOutputStream(ClientSocket.getOutputStream());
-			ReadInput = new ObjectInputStream(ClientSocket.getInputStream());
+			MasterConnection = new Socket("127.0.0.1", MasterPort); //should client be reading from config?
+			WriteOutputMaster = new ObjectOutputStream(MasterConnection.getOutputStream());
+			ReadInputMaster = new ObjectInputStream(MasterConnection.getInputStream());
 		}catch (FileNotFoundException e) {
 			System.out.println("Error (Client), the config file "+ ChunkServer.ClientConfigFile +" containing the port of the ChunkServer is missing.");
 		}catch (IOException e) {
@@ -58,28 +66,34 @@ public class ClientRec {
 		if(RecordID != null) {
 			return FSReturnVals.BadRecID;
 		}
-		String ChunkHandle = ofh.chunkHandles.get(ofh.chunkHandles.size()-1);
+		Vector<String> ChunkHandles = ofh.getChunkHandles();
+		String ChunkHandle = ChunkHandles.lastElement();
 		byte[] CHinBytes = ChunkHandle.getBytes();
+		Location primaryLoc = ofh.getPrimaryLocation();
 		try {
-			WriteOutput.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + payload.length + CHinBytes.length);
-			WriteOutput.writeInt(ChunkServer.WriteChunkCMD);
-			WriteOutput.writeInt(-1); //Specifies to WriteChunk to append the data
-			WriteOutput.writeInt(payload.length);
-			WriteOutput.write(payload);
-			WriteOutput.write(CHinBytes);
-			WriteOutput.flush();
+			Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
+			ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
+			ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 			
-			int offset = ReadInput.readInt();
-		/*	if(offset == -1) {
-				RecordID = null;
+			WriteOutputCS.writeInt(ChunkServer.WriteChunkCMD); //Code
+			WriteOutputCS.writeInt(payload.length);
+			WriteOutputCS.write(payload);
+			WriteOutputCS.write(CHinBytes.length);
+			WriteOutputCS.write(CHinBytes); //ChunkHandle
+			WriteOutputCS.flush();
+			
+			int index = ReadInputCS.readInt();
+			if(index == -1)
+			{
 				return FSReturnVals.Fail;
-			}*/
-			
-			RecordID.chunkhandle = ChunkHandle;
-			RecordID.offset = offset;
-			RecordID.recordSize = payload.length;
-			
-			return FSReturnVals.Success;
+			}
+			else
+			{
+				RecordID = new RID();
+				RecordID.ChunkHandle = ChunkHandle;
+				RecordID.index = index;
+				return FSReturnVals.Success;
+			}
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -235,4 +249,6 @@ public class ClientRec {
 		return null;
 	}
 
+
+	
 }

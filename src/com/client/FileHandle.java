@@ -4,11 +4,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
 
+import master.Location;
+
 public class FileHandle {
 	
 	String fileName;
-	Vector<String> chunkHandles; //array of all chunk handles that constitute the file
-	HashMap<String, Vector<String>> chunksToLocations;
+	Vector<String> ChunkHandles; //array of all chunk handles that constitute the file
+	HashMap<String, Vector<Location>> chunksToLocations;
+	Location primaryLoc;
 	
 	public FileHandle(){}
 	
@@ -16,14 +19,39 @@ public class FileHandle {
 	{
 		this.fileName = name;
 	}
+	
+	public String getFileName()
+	{
+		return fileName;
+	}
 	public void setHandles(Vector<String> chunksOfFile)
 	{
-		this.chunkHandles = chunksOfFile;
+		this.ChunkHandles = chunksOfFile;
 	}
-	public void setLocations(HashMap<String, Vector<String>> locationsOfChunks)
+	
+	public Vector<String> getChunkHandles()
+	{
+		return ChunkHandles;
+	}
+	
+	public void setLocations(HashMap<String, Vector<Location>> locationsOfChunks)
 	{
 		this.chunksToLocations = locationsOfChunks;
 	}
 	
+	public HashMap<String, Vector<Location>> getLocations()
+	{
+		return chunksToLocations;
+	}
+	
+	public void setPrimaryLocation(Location loc)
+	{
+		primaryLoc = loc;
+	}
+	
+	public Location getPrimaryLocation()
+	{
+		return primaryLoc;
+	}
 	
 }

@@ -16,6 +16,7 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -32,8 +33,8 @@ public class TFSMaster{
 	public static Vector<String> filesThatHaveBeenDeleted;
 	
 	public static HashSet<String> namespace; //maps directory paths to IP address of chunk servers
-	public HashMap<String, Vector<String>> filesToChunkHandles; // maps which chunks constitute a file
-	public HashMap<String, Vector<String>> chunkHandlesToServers; //maps chunk handles to locations of their replicas(CS IP addresses)
+	public LinkedHashMap<String, Vector<String>> filesToChunkHandles; // maps which chunks constitute a file
+	public HashMap<String, Vector<Location>> chunkHandlesToServers; //maps chunk handles to locations of their replicas(CS IP addresses)
 	public HashMap<String, Lease> ChunkLeaseMap;
 	public HashMap<Lease, String> LeaseServerMap;
 	
@@ -45,8 +46,8 @@ public class TFSMaster{
 	public TFSMaster()
 	{
 		namespace = new HashSet<String>();
-		filesToChunkHandles = new HashMap<String, Vector<String>>();
-		chunkHandlesToServers = new HashMap<String, Vector<String>>();
+		filesToChunkHandles = new LinkedHashMap<String, Vector<String>>();
+		chunkHandlesToServers = new HashMap<String, Vector<Location>>();
 		filesThatHaveBeenDeleted = new Vector<String>();
 		
 		//read all metadata from files on startup
@@ -284,17 +285,28 @@ public class TFSMaster{
 	public void createFileFromLog(){}
 	
 	//Returns the handles which have been deleted
-	public Vector<String> updateChunkLocations(String IPAddress, String [] ChunkHandles)
+	public Vector<String> updateChunkLocations(Location loc, String [] ChunkHandles)
 		{
 			Vector<String> deletedChunks = new Vector<String>();
+			boolean newLocation = true;
 			for(int i = 0; i < ChunkHandles.length; i++)
 			{
 				
-				Vector<String> ServerVector = chunkHandlesToServers.get(ChunkHandles[i]);
-				if(!ServerVector.contains(IPAddress))
+				Vector<Location> ServerVector = chunkHandlesToServers.get(ChunkHandles[i]);
+				for(int j = 0; j < ServerVector.size(); j++)
 				{
-					ServerVector.add(IPAddress);
+					Location location = ServerVector.elementAt(j);
+					if(location.IPAddress.equals(loc.IPAddress))
+					{
+						newLocation = false;
+						break;
+					}
 				}
+				if(newLocation)
+				{
+					ServerVector.add(loc);
+				}
+				newLocation = true;
 				if(filesThatHaveBeenDeleted.contains(ChunkHandles[i]))
 				{
 					deletedChunks.add(ChunkHandles[i]);
@@ -303,10 +315,10 @@ public class TFSMaster{
 			return deletedChunks;
 		}
 		
-		public boolean renewLease(String IPAddress, String ChunkHandle)
+		public boolean renewLease(Location loc, String ChunkHandle)
 		{
 			Lease lease = ChunkLeaseMap.get(ChunkHandle);
-			if(IPAddress == LeaseServerMap.get(lease))
+			if(loc.equals(LeaseServerMap.get(lease)))
 			{
 				lease.updateLeaseMaster();
 				return true;
@@ -581,10 +593,10 @@ public class TFSMaster{
 				
 				//for each chunk, get its location -- IP address of chunkserver
 				//maps chunkHandles to all the locations of its replicas
-				HashMap<String, Vector<String>> ChunkLocations = new HashMap<String, Vector<String>>();
+				HashMap<String, Vector<Location>> ChunkLocations = new HashMap<String, Vector<Location>>();
 				for (int i = 0; i < chunksOfFile.size(); i++)
 				{
-					Vector<String> location = chunkHandlesToServers.get(chunksOfFile.elementAt(i));
+					Vector<Location> location = chunkHandlesToServers.get(chunksOfFile.elementAt(i));
 					ChunkLocations.put(chunksOfFile.elementAt(i), location);
 				}
 				
