@@ -794,7 +794,7 @@ public class TFSMaster{
 			
 				//check if file already exists
 				String fileName = (String) ois.readObject();
-				boolean checkFileExists = namespace.contains(tgtdir+"/"+fileName);//if this returns null, there is no match
+				boolean checkFileExists = namespace.contains(tgtdir+fileName);//if this returns null, there is no match
 				if (!checkFileExists) {
 					oos.writeObject("file_does_not_exist");
 					oos.flush();
