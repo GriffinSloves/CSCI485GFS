@@ -23,6 +23,8 @@ import java.util.Vector;
 
 
 
+
+
 import com.chunkserver.ChunkServer;
 import com.chunkserver.Lease;
 import com.client.FileHandle;
@@ -34,10 +36,10 @@ public class TFSMaster{
 	public static Vector<String> filesThatHaveBeenDeleted;
 	
 	public static LinkedHashSet<String> namespace; //maps directory paths to IP address of chunk servers
-	public LinkedHashMap<String, Vector<String>> filesToChunkHandles; // maps which chunks constitute a file
-	public HashMap<String, Vector<Location>> chunkHandlesToServers; //maps chunk handles to locations of their replicas(CS IP addresses)
-	public HashMap<String, Lease> ChunkLeaseMap;
-	public HashMap<Lease, String> LeaseServerMap;
+	public static LinkedHashMap<String, Vector<String>> filesToChunkHandles; // maps which chunks constitute a file
+	public static HashMap<String, Vector<Location>> chunkHandlesToServers; //maps chunk handles to locations of their replicas(CS IP addresses)
+	public static HashMap<String, Lease> ChunkLeaseMap;
+	public static HashMap<Lease, String> LeaseServerMap;
 	
 	
 	public static final String nameSpaceFile = "namespace.txt";
@@ -265,7 +267,7 @@ public class TFSMaster{
 		}
 		
 		
-		//iterate through namespace and find all matches where the src/destinationToDelete is a substring
+		//iterate through namespace and find all matches where the src/destinationTo is a substring
 		//this will capture all files/directories within the directory to be deleted
 		Iterator it = (Iterator) namespace.iterator();
 		while (it.hasNext())
@@ -484,7 +486,6 @@ public class TFSMaster{
 				
 				//iterate through namespace and find all matches where the src/destinationToDelete is a substring
 				//this will capture all files/directories within the directory to be deleted
-				
 				int directoriesFoundToDelete = 0;
 				Iterator it = (Iterator) namespace.iterator();
 				while (it.hasNext())
@@ -494,33 +495,20 @@ public class TFSMaster{
 					//System.out.println("checking if: " + toCheck+ " begins w/ " + srcDirectory+dirname);
 					if (toCheck.startsWith(srcDirectory+dirname))
 					{
-						//if its a match add to list of deleted (will be sent to ChunkServers via heartbeat message)
-						//then delete it from the namespace
-						filesThatHaveBeenDeleted.add(toCheck);
 						directoriesFoundToDelete++;
-						
-						//log the delete operation
-						//append this create operation to the logfile
-						if(master.currentLogFile == null) System.out.println("Cannot append to log, current log == null");
-						FileOutputStream fos = new FileOutputStream(master.currentLogFile);
-						PrintWriter pw = new PrintWriter(fos); 
-						pw.println("deleteDir:"+srcDirectory+"/"+dirname);//create log record of create operation
-						pw.close();
-						
-						//remove from namespace
-						it.remove();
 					}
 				}
-				//System.out.println(directoriesFoundToDelete);
 				//send response to ClientFS
 				if (directoriesFoundToDelete > 1)
 				{
-					oos.writeObject("success_dir_not_empty");
+					oos.writeObject("dir_not_empty");
 					oos.flush();
 				}
 				else{
 					oos.writeObject("success");
 					oos.flush();
+					//remove the namespace from directory
+					namespace.remove(srcDirectory+dirname+"/");
 				}
 				
 			}catch (IOException IOE){
@@ -543,6 +531,9 @@ public class TFSMaster{
 			
 			
 			//check if source exists
+			System.out.println(namespace.size());
+			System.out.println("src = " + src);
+
 			boolean checkSrcExists = (namespace.contains(src) || namespace.contains(src+"/"));
 			if (!checkSrcExists)
 			{
@@ -581,12 +572,14 @@ public class TFSMaster{
 			
 			//remove the old directory from the namespace and rename
 			//must also rename any directory beginning w/ src/oldName
-			/*Iterator*/ it = namespace.iterator();
-			System.out.println("Finding directory paths that start with: " + src);
+			/*Iterator*/ 
+			//System.out.println("Finding directory paths that start with: " + src);
+			Vector<String> newNamestoAdd= new Vector<String>();
+			it = namespace.iterator();
 			while (it.hasNext())
 			{
 				String temp = (String) it.next();//iterate through each namespace entry
-				if (temp.startsWith(src))
+				if (temp.startsWith(src+"/"))
 				{
 					int srcLength = src.length();//get the length of the sourceDir path
 					srcLength++; //to account for /
@@ -596,14 +589,20 @@ public class TFSMaster{
 					String afterSrc = temp.substring(srcLength, temp.length());
 					
 					//add the renamed path
-					String renamedPath = newName+afterSrc;
-					System.out.println("Adding renamed path: "+renamedPath);
+					String renamedPath = newName+"/"+afterSrc;
+					newNamestoAdd.add(renamedPath);
 					
 					//remove the old entry from the namespace
 					it.remove();
-					
 				}
 			}
+			
+			//add back all the newly named paths to namespace
+			for (int i = 0; i < newNamestoAdd.size(); i++)
+			{
+				namespace.add(newNamestoAdd.get(i));
+			}
+			
 			//send confirmation back to ClientFS
 			oos.writeObject("success");
 			oos.flush();
@@ -700,16 +699,15 @@ public class TFSMaster{
 			} catch (IOException e) {
 				e.printStackTrace();
 			}		}
+		
 		public void closeFile()
 		{
-			try {
+			/*try {
 				//read which file wants to be opened
-				FileHandle fileHandle = (FileHandle) ois.readObject();
-				
-				String filePath = fileHandle.getFileName();
-				
-				//use lookup table to get handles of all chunks of that file
-				Vector<String> chunksOfFile = filesToChunkHandles.get(filePath);
+				String fileName = (String) ois.readObject();
+				Vector<String> chunksOfFile = (Vector<String>) ois.readObject();
+				HashMap<String, Vector<Location>> locationsOfChunks = ofh.getLocations();
+				ois.readObject();
 				
 				if(chunksOfFile==null){
 					//send confirmation that file does not exist or is invalid
@@ -728,7 +726,7 @@ public class TFSMaster{
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
-			}
+			}*/
 		}
 		public void createFile()
 		{
@@ -796,7 +794,7 @@ public class TFSMaster{
 			
 				//check if file already exists
 				String fileName = (String) ois.readObject();
-				boolean checkFileExists = namespace.contains(tgtdir+"/"+fileName);//if this returns null, there is no match
+				boolean checkFileExists = namespace.contains(tgtdir+fileName);//if this returns null, there is no match
 				if (!checkFileExists) {
 					oos.writeObject("file_does_not_exist");
 					oos.flush();

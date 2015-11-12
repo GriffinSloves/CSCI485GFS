@@ -21,20 +21,21 @@ public class UnitTest2 {
 		UnitTest1 ut1 = new UnitTest1();
 		ut1.test1(cfs);
 		
-		cfs.displayNamespace();
+		//cfs.displayNamespace();
 		
 		int N = ut1.N;
 		String dir1 = "Shahram";
 		FSReturnVals fsrv = cfs.DeleteDir("/" + dir1 + "/", String.valueOf(N));
 		//String[] ret1 = cfs.ListDir(dir1);UNIT TEST 2 Changed see Jason's 
 		String[] ret1 = cfs.ListDir("/" + dir1);
-		
+		System.out.println("Checking if: /"+dir1+"/"+N+" exists.");
 		boolean isExist = isDirExist(ret1, "/" + dir1+"/"+N);
 		if(isExist == true){
 			System.out.println("Unit test 2 result: fail! - 1");
     		return;
 		}
 		
+		//cfs.displayNamespace();
 		
 		String dir2 = "Ghandeharizadeh";
 		String lastSec = "/" + dir2;
@@ -50,6 +51,7 @@ public class UnitTest2 {
     		return;
 		}
 		
+		//cfs.displayNamespace();
 		
 		fsrv = cfs.DeleteDir("/", dir1);
 		if(fsrv == FSReturnVals.DirNotEmpty){
@@ -59,7 +61,7 @@ public class UnitTest2 {
     		return;
 		}
 		
-		
+		//cfs.displayNamespace();
 		
 		fsrv = cfs.DeleteDir("/" + dir2 + "/1/", "2");
 		if(fsrv == FSReturnVals.DirNotEmpty){
@@ -69,11 +71,10 @@ public class UnitTest2 {
     		return;
 		}
 		
-		
-		
 		for(int i = 1; i < N; i++){
 			fsrv = cfs.RenameDir("/" + dir1 + "/" + i, "/" + dir1 + "/" + i + "i");
-			System.out.println("UT2 RenameResult: "+fsrv);
+			//System.out.println("Renaming "+"/" + dir1 + "/" + i+" to: "+"/" + dir1 + "/" + i + "i");
+			//System.out.println("UT2 RenameResult: "+fsrv);
 			if( fsrv != FSReturnVals.Success){
 				System.out.println("Unit test 2 result: fail! - 5");
 	    		return;
@@ -86,6 +87,8 @@ public class UnitTest2 {
     		return;
 		}
 		System.out.println("Unit test 2 result: success!");
+		
+		//cfs.displayNamespace();
 	}
 	
 	public static boolean isDirExist(String[] arr, String token){
