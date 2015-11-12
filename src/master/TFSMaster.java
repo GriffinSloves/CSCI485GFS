@@ -572,12 +572,14 @@ public class TFSMaster{
 			
 			//remove the old directory from the namespace and rename
 			//must also rename any directory beginning w/ src/oldName
-			/*Iterator*/ it = namespace.iterator();
-			System.out.println("Finding directory paths that start with: " + src);
-			//while (it.hasNext())
-			//{
+			/*Iterator*/ 
+			//System.out.println("Finding directory paths that start with: " + src);
+			Vector<String> newNamestoAdd= new Vector<String>();
+			it = namespace.iterator();
+			while (it.hasNext())
+			{
 				String temp = (String) it.next();//iterate through each namespace entry
-				if (temp.startsWith(src))
+				if (temp.startsWith(src+"/"))
 				{
 					int srcLength = src.length();//get the length of the sourceDir path
 					srcLength++; //to account for /
@@ -588,13 +590,19 @@ public class TFSMaster{
 					
 					//add the renamed path
 					String renamedPath = newName+afterSrc;
-					System.out.println("Adding renamed path: "+renamedPath);
+					newNamestoAdd.add(renamedPath);
 					
 					//remove the old entry from the namespace
 					it.remove();
-					
 				}
-			//}
+			}
+			
+			//add back all the newly named paths to namespace
+			for (int i = 0; i < newNamestoAdd.size(); i++)
+			{
+				namespace.add(newNamestoAdd.get(i));
+			}
+			
 			//send confirmation back to ClientFS
 			oos.writeObject("success");
 			oos.flush();
@@ -694,12 +702,12 @@ public class TFSMaster{
 		
 		public void closeFile()
 		{
-			try {
+			/*try {
 				//read which file wants to be opened
 				String fileName = (String) ois.readObject();
 				Vector<String> chunksOfFile = (Vector<String>) ois.readObject();
 				HashMap<String, Vector<Location>> locationsOfChunks = ofh.getLocations();
-				ois.readObject()
+				ois.readObject();
 				
 				if(chunksOfFile==null){
 					//send confirmation that file does not exist or is invalid
@@ -718,7 +726,7 @@ public class TFSMaster{
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
-			}
+			}*/
 		}
 		public void createFile()
 		{

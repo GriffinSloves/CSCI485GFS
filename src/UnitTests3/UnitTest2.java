@@ -71,12 +71,10 @@ public class UnitTest2 {
     		return;
 		}
 		
-		cfs.displayNamespace();
-		
 		for(int i = 1; i < N; i++){
 			fsrv = cfs.RenameDir("/" + dir1 + "/" + i, "/" + dir1 + "/" + i + "i");
-			System.out.println("Renaming "+"/" + dir1 + "/" + i+" to: "+"/" + dir1 + "/" + i + "i");
-			System.out.println("UT2 RenameResult: "+fsrv);
+			//System.out.println("Renaming "+"/" + dir1 + "/" + i+" to: "+"/" + dir1 + "/" + i + "i");
+			//System.out.println("UT2 RenameResult: "+fsrv);
 			if( fsrv != FSReturnVals.Success){
 				System.out.println("Unit test 2 result: fail! - 5");
 	    		return;
@@ -89,6 +87,8 @@ public class UnitTest2 {
     		return;
 		}
 		System.out.println("Unit test 2 result: success!");
+		
+		//cfs.displayNamespace();
 	}
 	
 	public static boolean isDirExist(String[] arr, String token){
