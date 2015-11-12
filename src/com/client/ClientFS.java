@@ -179,6 +179,10 @@ public class ClientFS {
 			WriteOutput.writeObject(NewName);
 			WriteOutput.flush();
 			
+			//if there already is a directory with that name
+			response = (String) ReadInput.readObject();
+			if (response.equals("dest_dir_exists")) return FSReturnVals.DestDirExists;
+			
 			//get confirmation that the directory was renamed at the master namespace level
 			response = (String) ReadInput.readObject();
 			if (response.equals("success")) return FSReturnVals.Success;
@@ -212,12 +216,12 @@ public class ClientFS {
 			
 			//if the src directory doesn't exist, return the error
 			String response = (String) ReadInput.readObject();
-			if (response.equals("does_not_exist")) return null; //FSReturnVals.SrcDirNotExistent;
+			if (response.equals("does_not_exist")) return (new String[0]); //FSReturnVals.SrcDirNotExistent;
 			
 			//get a server response indicating if the directory is empty
 			response = (String) ReadInput.readObject();
 			if(response.equals("is_empty")){
-				return null;
+				return (new String[0]);
 			}
 			
 			//get the list sent as a String[] at the master namespace level

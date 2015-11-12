@@ -57,7 +57,7 @@ public class TFSMaster{
 			while (true)
 			{
 				Socket s = ss.accept();
-				System.out.println("Client connected to master");
+				//System.out.println("Client connected to master");
 				ServerThread st = new ServerThread(s, this);
 				st.start();
 			}
@@ -427,11 +427,9 @@ public class TFSMaster{
 			//create the directory in the namespace
 			namespace.add(srcDirectory+dirname+"/");
 			//System.out.println("Added: "+srcDirectory+dirname+" to namespace");
-			Iterator it = namespace.iterator();
-			/*while (it.hasNext())
-			{
-				System.out.print(it.next()+", ");
-			}*/
+			
+			
+			
 			//send confirmation
 			oos.writeObject("success");
 			oos.flush();
@@ -515,9 +513,85 @@ public class TFSMaster{
 				e.printStackTrace();
 			}
 		}
-		public void renameDir()
+		public void renameDir() throws ClassNotFoundException, IOException
 		{
+			String src = (String) ois.readObject();
+			System.out.println("Master RenameDir Src: "+src);
 			
+			Iterator it = namespace.iterator();
+			while (it.hasNext())
+			{
+				String temp = (String) it.next();
+				System.out.println(temp);
+			}
+			
+			
+			//check if source exists
+			boolean checkSrcExists = (namespace.contains(src) || namespace.contains(src+"/"));
+			if (!checkSrcExists)
+			{
+				System.out.println(src+" and "+src+"/ both don't exist in namespace");
+				
+				System.out.println("Begin List Namespace:");
+				it = namespace.iterator();
+				while (it.hasNext())
+				{
+					String temp = (String) it.next();
+					System.out.println(temp);
+				}
+				System.out.println("End List Namespace:");
+				oos.writeObject("does_not_exist");
+				oos.flush();
+				return;
+			}
+			else{
+				oos.writeObject("x"); //because the client is still waiting for a response
+				oos.flush(); //send "" to clear the readObject command in ClientFS
+			}
+			
+			String newName = (String) ois.readObject();
+			//check if the directory already exists in the namespace
+			boolean checkNewNameExists = (namespace.contains(src+"/"+newName));
+			if (checkNewNameExists)
+			{
+				oos.writeObject("dest_dir_exits");
+				oos.flush();
+				return;
+			}
+			else{
+				oos.writeObject("x"); //because the client is still waiting for a response
+				oos.flush(); //send "" to clear the readObject command in ClientFS
+			}
+			
+			//remove the old directory from the namespace and rename
+			//must also rename any directory beginning w/ src/oldName
+			/*Iterator*/ it = namespace.iterator();
+			System.out.println("Finding directory paths that start with: " + src);
+			while (it.hasNext())
+			{
+				String temp = (String) it.next();//iterate through each namespace entry
+				if (temp.startsWith(src))
+				{
+					int srcLength = src.length();//get the length of the sourceDir path
+					srcLength++; //to account for /
+					
+					//store everything after src/
+					//example - from src/a/b/c/d/e/f.txt get /b/c/d/e/f.txt
+					String afterSrc = temp.substring(srcLength, temp.length());
+					
+					//add the renamed path
+					String renamedPath = newName+afterSrc;
+					System.out.println("Adding renamed path: "+renamedPath);
+					
+					//remove the old entry from the namespace
+					it.remove();
+					
+				}
+			}
+			//send confirmation back to ClientFS
+			oos.writeObject("success");
+			oos.flush();
+
 		}
 		public void listDir() throws ClassNotFoundException, IOException
 		{
@@ -552,7 +626,7 @@ public class TFSMaster{
 			if(contents.size() == 1)
 			{
 				oos.writeObject("is_empty");
-				System.out.println("the directory is empty!");
+				//System.out.println("the directory is empty!");
 				oos.flush();
 				return;
 			}

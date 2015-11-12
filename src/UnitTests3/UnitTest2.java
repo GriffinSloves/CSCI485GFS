@@ -31,7 +31,7 @@ public class UnitTest2 {
 			System.out.println("Unit test 2 result: fail! - 1");
     		return;
 		}
-		//System.out.println("Got Thru UT1");
+		
 		
 		String dir2 = "Ghandeharizadeh";
 		String lastSec = "/" + dir2;
@@ -41,13 +41,12 @@ public class UnitTest2 {
 		fsrv = cfs.DeleteDir(lastSec + "/", String.valueOf(N));
 		
 		String[] ret2 = cfs.ListDir(lastSec);
-		System.out.println(ret2 == null);
 		isExist = isDirExist(ret2, lastSec + "/" + N);
 		if(isExist == true){
 			System.out.println("Unit test 2 result: fail! - 2");
     		return;
 		}
-		System.out.println("Got Thru UT2");
+		
 		
 		fsrv = cfs.DeleteDir("/", dir1);
 		if(fsrv == FSReturnVals.DirNotEmpty){
@@ -57,7 +56,7 @@ public class UnitTest2 {
     		return;
 		}
 		
-		System.out.println("Got Thru UT3");
+		
 		
 		fsrv = cfs.DeleteDir("/" + dir2 + "/1/", "2");
 		if(fsrv == FSReturnVals.DirNotEmpty){
@@ -67,10 +66,11 @@ public class UnitTest2 {
     		return;
 		}
 		
-		System.out.println("Got Thru UT4");
+		
 		
 		for(int i = 1; i < N; i++){
 			fsrv = cfs.RenameDir("/" + dir1 + "/" + i, "/" + dir1 + "/" + i + "i");
+			System.out.println("UT2 RenameResult: "+fsrv);
 			if( fsrv != FSReturnVals.Success){
 				System.out.println("Unit test 2 result: fail! - 5");
 	    		return;
@@ -86,6 +86,10 @@ public class UnitTest2 {
 	}
 	
 	public static boolean isDirExist(String[] arr, String token){
+		if(arr == null || arr.length == 0){
+		    return false;
+		}
+		
 		for (int i=0; i < arr.length; i++)
 			if (arr[i].equals(token)) return true;
 		return false;
