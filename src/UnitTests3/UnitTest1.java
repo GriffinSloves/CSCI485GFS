@@ -15,26 +15,25 @@ import com.client.ClientFS.FSReturnVals;
 public class UnitTest1 {
 	
 	public static int N = 100;
-	//public static String root = "Shahram";
-	//public static ArrayList<String> gen = new ArrayList<String>();
+	static final String TestName = "Unit Test 1: ";
 	
 	public static void main(String[] args) {
 		test1(new ClientFS());
 	}
 	
 	public static void test1(ClientFS cfs){
+		System.out.println(TestName + "Create dir /Shahram, /Shahram/1, /Shahram/2, /Shahram/3, ... /Shahram/N and verify them.");
 		String dir1 = "Shahram";
 		FSReturnVals fsrv = cfs.CreateDir("/", dir1);
 		if ( fsrv != FSReturnVals.Success ){
-			System.out.println("Unit test 1 result: fail! - 1");
+			System.out.println("Unit test 1 result: fail!");
     		return;
 		}
 		String[] gen1 = new String[N];
 		for(int i = 1; i <= N; i++){
-			//System.out.println("UT1 Creating:" + "/" + dir1 + "/"+ String.valueOf(i));
 			fsrv = cfs.CreateDir("/" + dir1 + "/", String.valueOf(i));
 			if( fsrv != FSReturnVals.Success ){
-				System.out.println("Unit test 1 result: fail! - 2");
+				System.out.println("Unit test 1 result: fail!");
 	    		return;
 			}
 			gen1[i - 1] = "/" + dir1 + "/" + i;
@@ -47,6 +46,7 @@ public class UnitTest1 {
     		return;
 		}
 		
+		System.out.println(TestName + "Create dir /Ghandeharizadeh, /Ghandeharizadeh/1, /Ghandeharizadeh/1/2, .... /Ghandeharizadeh/1/2/.../N and verify them.");
 		String dir2 = "Ghandeharizadeh";
 		fsrv = cfs.CreateDir("/", dir2);
 		if( fsrv != FSReturnVals.Success ){
@@ -72,11 +72,11 @@ public class UnitTest1 {
     		return;
 		}
 		
-        System.out.println("Unit test 1 result: success!"); 
+        System.out.println(TestName + "Success!"); 
 	}
 	
 	public static boolean compareArrays(String[] arr1, String[] arr2) {
-	    HashSet<String> set1 = new HashSet<String>(Arrays.asList(arr2));
+	    HashSet<String> set1 = new HashSet<String>(Arrays.asList(arr1));
 	    HashSet<String> set2 = new HashSet<String>(Arrays.asList(arr2));
 	    return set1.equals(set2);
 	}
