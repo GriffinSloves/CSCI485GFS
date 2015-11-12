@@ -36,10 +36,12 @@ public class UnitTest1 {
 				System.out.println("Unit test 1 result: fail!-2");
 	    		return;
 			}
-			gen1[i - 1] = "/" + dir1 + "/" + i;
+			gen1[i - 1] = "/" + dir1 + "/" + i+"/";//had to edit
 		}
-		cfs.displayNamespace();
-		String[] ret1 = cfs.ListDir("/" + dir1);
+		//cfs.displayNamespace();
+		String[] ret1 = cfs.ListDir("/" + dir1+"/");//had to edit
+		
+		
 		boolean compare1 = compareArrays(gen1, ret1);
 		if(compare1 == false){
 			System.out.println("Unit test 1 result: fail!-3");
@@ -62,10 +64,11 @@ public class UnitTest1 {
 	    		return;
 			}
 			prev = prev + "/" + i;
-			gen2[i - 1] = prev;
+			gen2[i - 1] = prev+"/";//had to change
 		}	
 		
-		ret1 = cfs.ListDir("/" + dir2);
+		ret1 = cfs.ListDir("/" + dir2+"/");//had to change
+		
 		compare1 = compareArrays(gen2, ret1);
 		if(compare1 == false){
 			System.out.println("Unit test 1 result: fail!-6");

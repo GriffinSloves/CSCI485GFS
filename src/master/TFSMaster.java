@@ -711,7 +711,7 @@ public class TFSMaster{
 			while (it.hasNext())
 			{
 				String temp = (String)it.next();
-				if (temp.startsWith(target))//if it is a match -- WONT THIS GET ALL THE SUBFOLDERS OF SUBFOLDERS
+				if (temp.startsWith(target)&&!temp.equals(target))//if it is a match -- WONT THIS GET ALL THE SUBFOLDERS OF SUBFOLDERS
 				{
 					contents.addElement(temp);
 				}
