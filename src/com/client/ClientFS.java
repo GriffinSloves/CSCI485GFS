@@ -10,6 +10,8 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Vector;
 
 import com.chunkserver.ChunkServer;
@@ -405,5 +407,28 @@ public class ClientFS {
 		return null;
 	}
 	
+	public void displayNamespace(){
+		try{
+			//ask for namespace
+			WriteOutput.writeObject("NameSpace");
+			WriteOutput.flush();
+			
+			System.out.println("");
+			System.out.println("Displaying Namespace:");
+			
+			HashSet<String> set = (HashSet<String>) ReadInput.readObject();
+			
+			Iterator<String> itr = set.iterator();
+	        while(itr.hasNext()){
+	            System.out.println(itr.next());
+	        }
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		
+	}
 	
 }

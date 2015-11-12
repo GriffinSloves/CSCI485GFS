@@ -385,6 +385,9 @@ public class TFSMaster{
 					{
 						listDir();
 					}
+					if(command.equals("NameSpace")){
+						NameSpace();
+					}
 				}
 			}
 			catch (ClassNotFoundException e) {
@@ -814,7 +817,22 @@ public class TFSMaster{
 					e.printStackTrace();
 			}
 		}
+		
+		public void NameSpace() {
+			//send confirmation
+			try {
+				//send namespace hashset
+				oos.writeObject(namespace);
+				oos.flush();
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+		}
+			
+		}
 	}
+	
+	
 
 
 
