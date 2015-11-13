@@ -32,7 +32,8 @@ import com.client.FileHandle;
 
 public class TFSMaster{
 	
-	public final static String MasterConfigFile = "MasterConfig.txt";
+	public static final String MasterConfigFile = "MasterConfig.txt";
+	public static final String MasterLogConfig = "MasterLogConfig.txt";
 	public static String currentLogFile;
 	public static Vector<String> filesThatHaveBeenDeleted;
 	
@@ -56,7 +57,7 @@ public class TFSMaster{
 		filesThatHaveBeenDeleted = new Vector<String>();
 		
 		//read all metadata from files on startup
-		//readMasterConfig();
+		readMasterLogConfig();
 		readMetaData();
 		ServerSocket ss = null;
 		try{
@@ -71,12 +72,14 @@ public class TFSMaster{
 		}
 		catch (IOException ioe) {ioe.printStackTrace();}
 	}
-	public void readMasterConfig()
+	//this will read the masterLogConfig so the master knows which log file is the most recent
+	//implements checkpointing
+	public void readMasterLogConfig()
 	{
 		FileReader fr;
 		BufferedReader br;
 		try{
-			fr = new FileReader(MasterConfigFile);
+			fr = new FileReader(MasterLogConfig);
 			br = new BufferedReader(fr);
 			
 			//read the number of the log file that is most current
@@ -84,7 +87,7 @@ public class TFSMaster{
 			this.logNumber = Integer.parseInt(logNum);
 			
 			//set the current log file
-			this.currentLogFile = "log"+logNumber+".txt";
+			this.currentLogFile = "log"+logNum+".txt";
 			
 			br.close();fr.close();
 		}catch (FileNotFoundException e) {
@@ -108,6 +111,15 @@ public class TFSMaster{
 			br = new BufferedReader(fr);
 			
 			String temp = br.readLine();
+			//if the namespacefile is empty
+			if (temp == null){
+				System.out.println("Namespace was empty, adding / as src");
+				namespace.add("/"); //to create the overall source
+				FileWriter fw = new FileWriter(nameSpaceFile,true);
+				BufferedWriter bw = new BufferedWriter(fw);
+				bw.write("/"+System.getProperty("line.separator"));
+				bw.close();
+			}
 			while(temp != null){
 				namespace.add(temp);//add each entry
 				//System.out.println("Constructor added: "+temp);
@@ -206,7 +218,10 @@ public class TFSMaster{
 	}
 	public void applyLog()
 	{
+		if (logSize < 30)return;//don't do anything if the log not at 20lines yet
+		else System.out.println("applying changes to log");
 		try {
+			System.out.println("Applying log from: "+currentLogFile);
 			FileReader fr = new FileReader(currentLogFile);
 			BufferedReader br = new BufferedReader(fr);
 			String logLine = br.readLine();
@@ -214,8 +229,9 @@ public class TFSMaster{
 			//should be in format: create:srcDirectoryName:directoryToCreateName
 			while (logLine!= null)
 			{
-				StringTokenizer str = new StringTokenizer(logLine);
+				StringTokenizer str = new StringTokenizer(logLine,":");
 				String command = str.nextToken();//the first token is the command
+				System.out.println("Processing: "+command);
 				
 				if (command.equals("createDir"))
 				{
@@ -231,11 +247,11 @@ public class TFSMaster{
 				}
 				if (command.equals("createFile"))
 				{
-					
+					createFileFromLog(str);
 				}
 				if (command.equals("deleteFile"))
 				{
-						
+					deleteFilefromLog(str);
 				}
 				logLine = br.readLine();//read each line of the log
 			}		
@@ -247,6 +263,21 @@ public class TFSMaster{
 			e.printStackTrace();
 		}
 			
+		//at the end, reset the logCounter and move to new logFile
+		logNumber++;//increment the lognumber after each logfile processed
+		File newLog = new File("log"+logNumber+".txt");//create the new file
+		this.currentLogFile = "log"+logNumber+".txt";//set it as current log
+		logSize = 0;//reset the counter 
+		
+		//update the masterlogconfig in case of shutdown
+		try {
+			FileWriter fw = new FileWriter(MasterLogConfig);
+			PrintWriter pw = new PrintWriter(fw);
+			pw.println(logNumber);
+			pw.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		
 	}
 	
@@ -260,10 +291,12 @@ public class TFSMaster{
 		
 		//add the information to the persistent namespace file
 		try {
-			FileWriter fw = new FileWriter(nameSpaceFile);
-			PrintWriter pw = new PrintWriter(fw);
-			pw.println(src+directoryToCreateName+"/");
-			pw.flush();
+			FileWriter fw = new FileWriter(nameSpaceFile,true);//open it in append mode
+			BufferedWriter bw = new BufferedWriter(fw);
+			bw.write(src+directoryToCreateName+"/"+System.getProperty("line.separator"));
+			bw.flush();
+			
+			System.out.println("Wrote to namespacefile:" +src+directoryToCreateName+"/"+System.getProperty("line.separator"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -285,7 +318,7 @@ public class TFSMaster{
 			File newnamespace = new File("temp-namespace.txt");
 			
 			BufferedReader br = new BufferedReader(new FileReader(oldnamespace));
-			BufferedWriter bw = new BufferedWriter(new FileWriter(newnamespace));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(newnamespace,true));//open the new file in append mode
 			
 			//the entry that was deleted
 			String searchingFor = src+directoryToDelete;
@@ -347,13 +380,14 @@ public class TFSMaster{
 		File newnamespace = new File("temp-namespace.txt");
 		
 		try {
-			BufferedWriter bw = new BufferedWriter(new FileWriter(newnamespace));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(newnamespace,true));//open the file in append mode
 			
 			it = namespace.iterator();
 			while (it.hasNext())
 			{
 				String temp = (String) it.next();
 				bw.write(temp+System.getProperty("line.separator"));//write each entry and newline char
+				bw.flush();
 			}
 			
 			bw.close();
@@ -369,8 +403,61 @@ public class TFSMaster{
 		}
 
 	}
-	public void deleteFilefromLog(){}
-	public void createFileFromLog(){}
+	public void deleteFilefromLog(StringTokenizer str)
+	{
+	 try{
+		String tgtdir = str.nextToken();
+		String fileToDelete = str.nextToken();
+		
+		//update the namespace file by writing it out to temp minus the deleted namespace
+		File oldnamespace = new File(nameSpaceFile);
+		File newnamespace = new File("temp-namespace.txt");
+		
+		BufferedReader br = new BufferedReader(new FileReader(oldnamespace));
+		BufferedWriter bw = new BufferedWriter(new FileWriter(newnamespace,true));//open the new file in append mode
+		
+		//the entry that was deleted
+		String searchingFor = tgtdir+fileToDelete;
+		String currentLine;
+		
+		while ((currentLine = br.readLine())!= null)
+		{
+			if (currentLine.equals(searchingFor))continue; //skip it if its supposed to be deleted
+			bw.write(currentLine+System.getProperty("line.separator"));//write with an endline separator
+		}
+		bw.close();
+		br.close();
+		oldnamespace.delete(); //delete the oldnamespacefile
+		boolean success = newnamespace.renameTo(oldnamespace);//rename it back to the old namespace.txt file
+		
+		//remove the file in mainmemory namespace
+		namespace.remove(tgtdir+fileToDelete);
+		
+	 }catch (IOException ioe){ioe.printStackTrace();}
+		
+		
+	}
+	public void createFileFromLog(StringTokenizer str)
+	{
+		String src = str.nextToken();
+		String newFileName = str.nextToken();
+		
+		//write newfile to namespace
+		try {
+			FileWriter fw = new FileWriter(nameSpaceFile,true);
+			BufferedWriter bw = new BufferedWriter(fw);
+			//add it to the namespace file
+			bw.write(src+"/"+newFileName+System.getProperty("line.separator"));
+			bw.flush();
+			bw.close();
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		//add it to the namespace in main memory
+		namespace.add(src+newFileName);
+		
+	}
 	
 	//Returns the handles which have been deleted
 	public Vector<String> updateChunkLocations(Location loc, String [] ChunkHandles)
@@ -403,7 +490,7 @@ public class TFSMaster{
 			return deletedChunks;
 		}
 		
-		public boolean renewLease(Location loc, String ChunkHandle)
+	public boolean renewLease(Location loc, String ChunkHandle)
 		{
 			Lease lease = ChunkLeaseMap.get(ChunkHandle);
 			if(loc.equals(LeaseServerMap.get(lease)))
@@ -439,6 +526,7 @@ public class TFSMaster{
 			try{
 				while (true)
 				{
+					applyLog();
 					String command = (String) ois.readObject();
 					
 					if (command.equals("CreateDir"))
@@ -476,6 +564,7 @@ public class TFSMaster{
 					if(command.equals("NameSpace")){
 						NameSpace();
 					}
+					
 				}
 			}
 			catch (ClassNotFoundException e) {
@@ -517,21 +606,20 @@ public class TFSMaster{
 				oos.flush(); //send "" to clear the readObject command in ClientFS
 			}
 			
-		/*	//append this create operation to the logfile
+			//append this create operation to the logfile
 			if(master.currentLogFile == null) {
 				System.out.println("Cannot append to log, current log == null");
 				
 			}
-			FileOutputStream fos = new FileOutputStream(master.currentLogFile);
-			PrintWriter pw = new PrintWriter(fos); 
-			pw.println("createDir:"+srcDirectory+":"+dirname);//create log record of create operation
-			pw.close();*/
+			FileWriter fw = new FileWriter(master.currentLogFile,true);//open the file in append mode
+			BufferedWriter bw = new BufferedWriter(fw); 
+			bw.write("createDir:"+srcDirectory+":"+dirname+System.getProperty("line.separator"));//create log record of create operation
+			bw.close();
+			master.logSize++;
 			
 			//create the directory in the namespace
 			namespace.add(srcDirectory+dirname+"/");
 			//System.out.println("Added: "+srcDirectory+dirname+" to namespace");
-			
-			
 			
 			//send confirmation
 			oos.writeObject("success");
@@ -593,11 +681,13 @@ public class TFSMaster{
 					oos.writeObject("success");
 					oos.flush();
 					
-					/*//write the delete to the log
+					//write the delete to the log
 					FileWriter fw = new FileWriter(currentLogFile,true);//open file in append only mode
 					BufferedWriter bw = new BufferedWriter(fw);
-					bw.write("deleteDir:"+srcDirectory+":"+dirname+"/");
-					bw.close();*/
+					bw.write("deleteDir:"+srcDirectory+":"+dirname+"/"+System.getProperty("line.separator"));
+					bw.flush();
+					bw.close();
+					master.logSize++;
 					
 					//remove the namespace from directory
 					namespace.remove(srcDirectory+dirname+"/");
@@ -612,7 +702,7 @@ public class TFSMaster{
 		public void renameDir() throws ClassNotFoundException, IOException
 		{
 			String src = (String) ois.readObject();
-			System.out.println("Master RenameDir Src: "+src);
+			//System.out.println("Master RenameDir Src: "+src);
 			Iterator it;
 
 			boolean checkSrcExists = (namespace.contains(src) || namespace.contains(src+"/"));
@@ -645,9 +735,9 @@ public class TFSMaster{
 			//must also rename any directory beginning w/ src/oldName
 			//System.out.println("Finding directory paths that start with: " + src);
 			
-			/*//Writes to logfile
+			//Writes to logfile
 			FileWriter fw = new FileWriter(currentLogFile,true);//open file in append only mode
-			BufferedWriter bw = new BufferedWriter(fw);*/
+			BufferedWriter bw = new BufferedWriter(fw);
 			
 			
 			Vector<String> newNamestoAdd= new Vector<String>();
@@ -665,7 +755,8 @@ public class TFSMaster{
 					String afterSrc = temp.substring(srcLength, temp.length());
 					
 					//write to the log
-					//bw.write("renameDir:"+src+":"+newName);
+					bw.write("renameDir:"+src+":"+newName+System.getProperty("line.separator"));
+					master.logSize++;
 					
 					//add the renamed path
 					String renamedPath = newName+"/"+afterSrc;
@@ -744,7 +835,7 @@ public class TFSMaster{
 				//use lookup table to get handles of all chunks of that file
 				Vector<String> chunksOfFile = filesToChunkHandles.get(filePath);
 				
-				if(chunksOfFile==null){
+				if(chunksOfFile == null){
 					//send confirmation that file does not exist
 					oos.writeObject("file_does_not_exist");
 					oos.flush();
@@ -784,7 +875,11 @@ public class TFSMaster{
 			try {
 				//read which file wants to be opened
 				String fileName = (String) ois.readObject();
+				System.out.println("Read command to close: "+fileName);
+				
+				//read the chunks that constitute that file
 				Vector<String> chunksOfFile = (Vector<String>) ois.readObject();
+				System.out.println("Read chunks of: "+fileName);
 				
 				//remove old mapping and add new key,value pair
 				System.out.println("removing "+fileName+" mapping from master.");
@@ -832,6 +927,12 @@ public class TFSMaster{
 					return;
 				}
 				else{
+					//add this create file command to the log
+					FileWriter fw = new FileWriter(currentLogFile,true);
+					BufferedWriter bw = new BufferedWriter(fw);
+					bw.write("createFile:"+tgtdir+fileName+System.getProperty("line.separator"));
+					master.logSize++;
+					
 					//add the file to the namespace
 					namespace.add(tgtdir+fileName);
 					
@@ -876,6 +977,13 @@ public class TFSMaster{
 					return;
 				}
 				else{
+					
+					//add this delete file command to the log
+					FileWriter fw = new FileWriter(currentLogFile,true);
+					BufferedWriter bw = new BufferedWriter(fw);
+					bw.write("deleteFile:"+tgtdir+fileName+System.getProperty("line.separator"));
+					master.logSize++;
+					
 					//remove the file from the namespace
 					namespace.remove(tgtdir+fileName);
 					

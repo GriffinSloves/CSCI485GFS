@@ -29,9 +29,13 @@ public class UnitTest4 {
 		}
 		fsrv = cfs.CreateFile("/" + dir1 + "/", "emp");
 		if( fsrv != FSReturnVals.Success ){
+			System.out.println(fsrv);
 			System.out.println("Unit test 4 result: fail!-2");
     		return;
 		}
+		
+		cfs.displayNamespace();
+		
 		//get the file handle first
 		FileHandle fh = new FileHandle();
 		FSReturnVals ofd = cfs.OpenFile("/" + dir1 + "/emp", fh);
