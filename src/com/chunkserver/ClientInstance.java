@@ -57,7 +57,7 @@ public class ClientInstance extends Thread
 				case CreateChunkCMD:
 					String chunkhandle = cs.createChunk();
 					byte[] CHinbytes = chunkhandle.getBytes();
-					WriteOutput.writeInt(ChunkServer.PayloadSZ + CHinbytes.length);
+					WriteOutput.writeInt(CHinbytes.length);
 					WriteOutput.write(CHinbytes);
 					WriteOutput.flush();
 					break;
