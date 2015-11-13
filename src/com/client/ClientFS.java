@@ -52,9 +52,10 @@ public class ClientFS {
 			port = port.substring( port.indexOf(':')+1 );
 			ServerPort = Integer.parseInt(port);
 			ClientSocket = new Socket("127.0.0.1", ServerPort);//should client be reading from config?
+			
 			WriteOutput = new ObjectOutputStream(ClientSocket.getOutputStream());
 			ReadInput = new ObjectInputStream(ClientSocket.getInputStream());
-
+			
 		}catch (FileNotFoundException e) {
 			System.out.println("Error (Client), the config file "+ TFSMaster.MasterConfigFile +" containing the port of the ChunkServer is missing.");
 		}catch (IOException e) {
@@ -386,18 +387,24 @@ public class ClientFS {
 			WriteOutput.writeObject("CloseFile");
 			WriteOutput.flush();
 			
-			String fileName = ofh.getFileName();
+			String fileName = ofh.getFileName(); System.out.println(fileName);
+			if (fileName == null){
+				System.out.println("BadHandle: fileName = null");
+				return FSReturnVals.BadHandle;
+			}
 			Vector<String> chunksOfFile = ofh.getChunkHandles();
-			
-			if(fileName == null || chunksOfFile == null){
+			if( chunksOfFile == null){
+				System.out.println("BadHandle: chunks = null");
 				return FSReturnVals.BadHandle;
 			}
 			
 			WriteOutput.writeObject(fileName);
 			WriteOutput.flush();
+			System.out.println("Sent command to close: "+fileName);
 			
 			WriteOutput.writeObject(chunksOfFile);
 			WriteOutput.flush();
+			System.out.println("Sent chunks of: "+fileName);
 			
 			String response = (String) ReadInput.readObject();
 			if (response.equals("success")) return FSReturnVals.Success;

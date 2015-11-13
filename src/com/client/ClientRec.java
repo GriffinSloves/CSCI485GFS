@@ -29,7 +29,7 @@ public class ClientRec {
 	static ObjectOutputStream WriteOutputMaster;
 	static ObjectInputStream ReadInputMaster;
 	public static final String MasterIPAddress = "127.0.0.1";
-	public static final int MasterPort = 6789;
+	public static final int MasterPort = 43317;
 	
 	public ClientRec() { //Will have to change. 
 						 //The client will connect to different chunk servers depending on which one as the data
@@ -46,7 +46,7 @@ public class ClientRec {
 		}catch (FileNotFoundException e) {
 			System.out.println("Error (Client), the config file "+ ChunkServer.ClientConfigFile +" containing the port of the ChunkServer is missing.");
 		}catch (IOException e) {
-			System.out.println("Can't find file.");
+			System.out.println("Can't find file.-1");
 		}
 	}
 	
