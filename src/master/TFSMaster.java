@@ -118,6 +118,7 @@ public class TFSMaster{
 				FileWriter fw = new FileWriter(nameSpaceFile,true);
 				BufferedWriter bw = new BufferedWriter(fw);
 				bw.write("/"+System.getProperty("line.separator"));
+				bw.flush();
 				bw.close();
 			}
 			while(temp != null){
@@ -328,6 +329,7 @@ public class TFSMaster{
 			{
 				if (currentLine.equals(searchingFor))continue; //skip it if its supposed to be deleted
 				bw.write(currentLine+System.getProperty("line.separator"));//write with an endline separator
+				bw.flush();
 			}
 			
 			bw.close();
@@ -424,6 +426,7 @@ public class TFSMaster{
 		{
 			if (currentLine.equals(searchingFor))continue; //skip it if its supposed to be deleted
 			bw.write(currentLine+System.getProperty("line.separator"));//write with an endline separator
+			bw.flush();
 		}
 		bw.close();
 		br.close();
@@ -447,7 +450,7 @@ public class TFSMaster{
 			FileWriter fw = new FileWriter(nameSpaceFile,true);
 			BufferedWriter bw = new BufferedWriter(fw);
 			//add it to the namespace file
-			bw.write(src+"/"+newFileName+System.getProperty("line.separator"));
+			bw.write(src+newFileName+System.getProperty("line.separator"));
 			bw.flush();
 			bw.close();
 			
@@ -614,6 +617,7 @@ public class TFSMaster{
 			FileWriter fw = new FileWriter(master.currentLogFile,true);//open the file in append mode
 			BufferedWriter bw = new BufferedWriter(fw); 
 			bw.write("createDir:"+srcDirectory+":"+dirname+System.getProperty("line.separator"));//create log record of create operation
+			bw.flush();
 			bw.close();
 			master.logSize++;
 			
@@ -756,6 +760,7 @@ public class TFSMaster{
 					
 					//write to the log
 					bw.write("renameDir:"+src+":"+newName+System.getProperty("line.separator"));
+					bw.flush();
 					master.logSize++;
 					
 					//add the renamed path
@@ -765,7 +770,7 @@ public class TFSMaster{
 					//remove the old entry from the namespace
 					it.remove();
 				}
-			}//bw.close();
+			}bw.close();
 			
 			//add back all the newly named paths to namespace
 			for (int i = 0; i < newNamestoAdd.size(); i++)
@@ -930,7 +935,8 @@ public class TFSMaster{
 					//add this create file command to the log
 					FileWriter fw = new FileWriter(currentLogFile,true);
 					BufferedWriter bw = new BufferedWriter(fw);
-					bw.write("createFile:"+tgtdir+fileName+System.getProperty("line.separator"));
+					bw.write("createFile:"+tgtdir+":"+fileName+System.getProperty("line.separator"));
+					bw.flush();
 					master.logSize++;
 					
 					//add the file to the namespace
@@ -979,11 +985,11 @@ public class TFSMaster{
 					return;
 				}
 				else{
-					
 					//add this delete file command to the log
 					FileWriter fw = new FileWriter(currentLogFile,true);
 					BufferedWriter bw = new BufferedWriter(fw);
-					bw.write("deleteFile:"+tgtdir+fileName+System.getProperty("line.separator"));
+					bw.write("deleteFile:"+tgtdir+":"+fileName+System.getProperty("line.separator"));
+					bw.flush();
 					master.logSize++;
 					
 					//remove the file from the namespace
