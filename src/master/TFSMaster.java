@@ -983,7 +983,6 @@ public class TFSMaster{
 					return;
 				}
 				else{
-					
 					//add this delete file command to the log
 					FileWriter fw = new FileWriter(currentLogFile,true);
 					BufferedWriter bw = new BufferedWriter(fw);
