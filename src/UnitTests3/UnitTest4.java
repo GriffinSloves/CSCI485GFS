@@ -44,7 +44,8 @@ public class UnitTest4 {
 		ClientRec crec = new ClientRec();
 		
 		System.out.println(TestName + "Construct a record with the first four bytes equal to i, followed with 5 char attributes each with length 20.");
-		for (int i = 0; i < NumRecs; i++){
+		//for (int i = 0; i < NumRecs; i++){
+		for (int i = 0; i < 10; i++){
 			payload = new byte[104];
 			byte[] ValInBytes = ByteBuffer.allocate(intSize).putInt(i).array();
 			System.arraycopy(ValInBytes, 0, payload, 0, intSize);

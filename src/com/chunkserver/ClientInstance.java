@@ -55,6 +55,7 @@ public class ClientInstance extends Thread
 				int CMD = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
 				switch (CMD){
 				case CreateChunkCMD:
+					System.out.println("ClientIntsance is trying to createCHunk");
 					String chunkhandle = cs.createChunk();
 					byte[] CHinbytes = chunkhandle.getBytes();
 					WriteOutput.writeInt(CHinbytes.length);

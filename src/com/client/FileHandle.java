@@ -8,21 +8,21 @@ import master.Location;
 
 public class FileHandle {
 	
-	String fileName;
+	String filePath;
 	Vector<String> ChunkHandles; //array of all chunk handles that constitute the file
 	HashMap<String, Vector<Location>> chunksToLocations;
 	Location primaryLoc;
 	
 	public FileHandle(){}
 	
-	public void setFileName(String name)
+	public void setFilePath(String path)
 	{
-		this.fileName = name;
+		this.filePath = path;
 	}
 
-	public String getFileName()
+	public String getFilePath()
 	{
-		return this.fileName;
+		return this.filePath;
 	}
 	public void setHandles(Vector<String> chunksOfFile)
 	{

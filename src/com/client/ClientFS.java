@@ -51,7 +51,7 @@ public class ClientFS {
 			String port = binput.readLine();
 			port = port.substring( port.indexOf(':')+1 );
 			ServerPort = Integer.parseInt(port);
-			ClientSocket = new Socket("127.0.0.1", ServerPort);//should client be reading from config?
+			ClientSocket = new Socket("127.0.0.1", 8001);//should client be reading from config?
 			
 			WriteOutput = new ObjectOutputStream(ClientSocket.getOutputStream());
 			ReadInput = new ObjectInputStream(ClientSocket.getInputStream());
@@ -345,7 +345,7 @@ public class ClientFS {
 	 */
 	public FSReturnVals OpenFile(String FilePath, FileHandle ofh) {
 		
-		ofh.setFileName(FilePath);
+		ofh.setFilePath(FilePath);
 		try {
 			//send command to master
 			WriteOutput.writeObject("OpenFile");
@@ -359,13 +359,13 @@ public class ClientFS {
 			if(response.equals("file_does_not_exist")){
 				return FSReturnVals.FileDoesNotExist;
 			}
-			
 			//load the list of chunks into filehandle object
 			Vector<String> chunksOfFile = (Vector<String>) ReadInput.readObject();
 			ofh.setHandles(chunksOfFile);
-			
 			HashMap<String, Vector<Location>> locationsOfChunks = (HashMap<String, Vector<Location>>) ReadInput.readObject();
 			ofh.setLocations(locationsOfChunks);
+			Location TestLocation = new Location("127.0.0.1", 8000);
+			ofh.setPrimaryLocation(TestLocation);
 			
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -387,8 +387,9 @@ public class ClientFS {
 			WriteOutput.writeObject("CloseFile");
 			WriteOutput.flush();
 			
-			String fileName = ofh.getFileName(); System.out.println(fileName);
-			if (fileName == null){
+			String filePath = ofh.getFilePath(); 
+			System.out.println(filePath);
+			if (filePath == null){
 				System.out.println("BadHandle: fileName = null");
 				return FSReturnVals.BadHandle;
 			}
@@ -398,13 +399,13 @@ public class ClientFS {
 				return FSReturnVals.BadHandle;
 			}
 			
-			WriteOutput.writeObject(fileName);
+			WriteOutput.writeObject(filePath);
 			WriteOutput.flush();
-			System.out.println("Sent command to close: "+fileName);
+			System.out.println("Sent command to close: "+filePath);
 			
 			WriteOutput.writeObject(chunksOfFile);
 			WriteOutput.flush();
-			System.out.println("Sent chunks of: "+fileName);
+			System.out.println("Sent chunks of: "+filePath);
 			
 			String response = (String) ReadInput.readObject();
 			if (response.equals("success")) return FSReturnVals.Success;

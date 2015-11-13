@@ -85,14 +85,13 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		}
 		try
 		{
-			ss = new ServerSocket(0);
-			int port = ss.getLocalPort();
-			MasterConnection = new Socket(MasterIPAddress, MasterPort);
+			ss = new ServerSocket(8000);
+			/*MasterConnection = new Socket(MasterIPAddress, MasterPort);
 			WriteOutput = new ObjectOutputStream(MasterConnection.getOutputStream());
 			ReadInput = new ObjectInputStream(MasterConnection.getInputStream());
 			WriteOutput.writeObject(ss.getInetAddress().getHostAddress());
 			WriteOutput.writeInt(port);
-			WriteOutput.flush();
+			WriteOutput.flush();*/
 		}
 		catch(IOException ex)
 		{
@@ -113,8 +112,8 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		
 		//Write to Master all of the chunkhandles being stored on this chunkserver
 		//Every second, check which leases are expiring and renew the necessary ones
-		RenewLeaseThread rlt = new RenewLeaseThread(this);
-		rlt.start();
+		//RenewLeaseThread rlt = new RenewLeaseThread(this);
+		//rlt.start();
 	}
 	
 	
@@ -126,9 +125,10 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			while(true)
 			{
 				Socket s = ss.accept(); //Blocking
-				ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+				//System.out.println("ChunkServer accepted socket");
 				ClientInstance ci = new ClientInstance(this, s);
 				ci.start();
+				//System.out.println("ChunkServer started ClientInstance");
 			}
 			
 			
@@ -211,17 +211,19 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			byte [] intBuf = new byte[4];
 			if(!file.exists())
 			{
+				System.out.println("Creating new file in ChunkServer.append");
 				raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
+				raf.setLength(4096);
 				//Write Header
 				//0-3, num records
 				//4-7, Start of next record
 				//8-11, End of free space
 				intBuf = ChunkServer.convertIntToBytes(0);
-				raf.write(intBuf, 0, 4);
+				writeChunk(ChunkHandle, intBuf, 0);
 				intBuf = ChunkServer.convertIntToBytes(12);
-				raf.write(intBuf, 4, 4);
+				writeChunk(ChunkHandle, intBuf, 4);
 				intBuf = ChunkServer.convertIntToBytes(4096);
-				raf.write(intBuf, 8, 4);
+				writeChunk(ChunkHandle, intBuf, 8);
 				
 			}
 			else

@@ -40,9 +40,9 @@ public class ClientRec {
 			port = port.substring( port.indexOf(':')+1 );
 			int ServerPort = Integer.parseInt(port);
 			
-			MasterConnection = new Socket("127.0.0.1", MasterPort); //should client be reading from config?
-			WriteOutputMaster = new ObjectOutputStream(MasterConnection.getOutputStream());
-			ReadInputMaster = new ObjectInputStream(MasterConnection.getInputStream());
+			//MasterConnection = new Socket("127.0.0.1", MasterPort); //should client be reading from config?
+			//WriteOutputMaster = new ObjectOutputStream(MasterConnection.getOutputStream());
+			//ReadInputMaster = new ObjectInputStream(MasterConnection.getInputStream());
 		}catch (FileNotFoundException e) {
 			System.out.println("Error (Client), the config file "+ ChunkServer.ClientConfigFile +" containing the port of the ChunkServer is missing.");
 		}catch (IOException e) {
@@ -63,27 +63,43 @@ public class ClientRec {
 		if(ofh == null) {
 			return FSReturnVals.BadHandle;
 		}
-		if(RecordID != null) {
+		if(RecordID.ChunkHandle != null) {
 			return FSReturnVals.BadRecID;
 		}
 		Vector<String> ChunkHandles = ofh.getChunkHandles();
-		String ChunkHandle = ChunkHandles.lastElement();
 		byte[] CHinBytes;
 		Location primaryLoc = ofh.getPrimaryLocation();
 		int count = 0;
 		int size;
+		//System.out.println("ChunkHandle.size: " + ChunkHandles.size());
+		/*for(int i = 0; i < ChunkHandles.size(); i++)
+		{
+			System.out.println("ChunkHandles[i]: " + ChunkHandles.get(i));
+		}*/
 		try {
+			//System.out.println("InCLientRec");
 			Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
+			//System.out.println("Opened up socket");
 			ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
+			//System.out.println("Opened up socket and streams1");
+			WriteOutputCS.flush();
 			ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
-			
+			//System.out.println("Opened up socket and streams2");
+			String ChunkHandle;
 			if(ChunkHandles.isEmpty())
 			{
+				System.out.println("CLient rec is attempting to createChunk");
 				WriteOutputCS.writeInt(ChunkServer.CreateChunkCMD);
 				WriteOutputCS.flush();
 				size = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
 				CHinBytes = Client.RecvPayload("ClientRec", ReadInputCS, size);
 				ChunkHandle = new String(CHinBytes);
+				ChunkHandles.add(ChunkHandle);
+				ofh.setHandles(ChunkHandles);
+			}
+			else
+			{
+				ChunkHandle = ChunkHandles.lastElement();
 			}
 			while(count < 2)
 			{
@@ -91,7 +107,7 @@ public class ClientRec {
 				WriteOutputCS.writeInt(ChunkServer.WriteChunkCMD); //Code
 				WriteOutputCS.writeInt(payload.length);
 				WriteOutputCS.write(payload);
-				WriteOutputCS.write(CHinBytes.length);
+				WriteOutputCS.writeInt(CHinBytes.length);
 				WriteOutputCS.write(CHinBytes); //ChunkHandle
 				WriteOutputCS.flush();
 				

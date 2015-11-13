@@ -61,7 +61,7 @@ public class TFSMaster{
 		readMetaData();
 		ServerSocket ss = null;
 		try{
-			ss = new ServerSocket(43317);//find open socket
+			ss = new ServerSocket(8001);//find open socket
 			while (true)
 			{
 				Socket s = ss.accept();
@@ -874,18 +874,18 @@ public class TFSMaster{
 		{
 			try {
 				//read which file wants to be opened
-				String fileName = (String) ois.readObject();
-				System.out.println("Read command to close: "+fileName);
+				String filePath = (String) ois.readObject();
+				System.out.println("Read command to close: "+filePath);
 				
 				//read the chunks that constitute that file
 				Vector<String> chunksOfFile = (Vector<String>) ois.readObject();
-				System.out.println("Read chunks of: "+fileName);
+				System.out.println("Read chunks of: "+filePath);
 				
 				//remove old mapping and add new key,value pair
-				System.out.println("removing "+fileName+" mapping from master.");
-				filesToChunkHandles.remove(fileName);
-				filesToChunkHandles.put(fileName, chunksOfFile);
-				System.out.println("Updated "+fileName+" mapping from master.");
+				System.out.println("removing "+filePath+" mapping from master.");
+				filesToChunkHandles.remove(filePath);
+				filesToChunkHandles.put(filePath, chunksOfFile);
+				System.out.println("Updated "+filePath+" mapping from master.");
 				
 				oos.writeObject("success");
 				oos.flush();
@@ -935,6 +935,8 @@ public class TFSMaster{
 					
 					//add the file to the namespace
 					namespace.add(tgtdir+fileName);
+					Vector<String> emptyChunkVector = new Vector<String>();
+					filesToChunkHandles.put(tgtdir+fileName, emptyChunkVector);
 					
 					//send confirmation
 					oos.writeObject("success");
