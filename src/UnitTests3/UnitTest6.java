@@ -11,6 +11,7 @@ import com.client.ClientFS.FSReturnVals;
 import com.client.ClientRec;
 import com.client.FileHandle;
 import com.client.RID;
+import com.client.TinyRec;
 
 /**
  * UnitTest6 for Part 3 of TinyFS
@@ -26,7 +27,7 @@ public class UnitTest6 {
 		String dir1 = "Shahram";
 		String TinyFileName = "Superbs";
 		
-		System.out.println(TestName + "Verify the chunk size is set to 512 KB, i.e., 512*1024.");
+		System.out.println(TestName + "Verify the chunk size is set to 1 MB, i.e., 1024*1024.");
 		
 		
 		ClientFS cfs = new ClientFS();
@@ -38,7 +39,7 @@ public class UnitTest6 {
 		int intSize = Integer.SIZE / Byte.SIZE;	// 4 bytes
 		ClientRec crec = new ClientRec();
 		
-		System.out.println(TestName+"Create two files for superheroes: One for the name and the other for their images.");
+		System.out.println(TestName + "Create two files for superheroes: One for the name and the other for their images.");
 		//Create two TinyFS filenames, one for the images and a second for the names
 		fsrv = cfs.CreateFile("/" + dir1 + "/", TinyFileName + ".img");
 		if( fsrv != FSReturnVals.Success ){
@@ -108,10 +109,10 @@ public class UnitTest6 {
 		imgofd = cfs.OpenFile("/" + dir1 + "/" + TinyFileName + ".img", ImageFH);
 		nameofd = cfs.OpenFile("/" + dir1 + "/" + TinyFileName + ".names", NameFH);
 		byte[] imagePL = null, namePL = null;
-		RID img1 = new RID();
-		FSReturnVals imgRID1 = crec.ReadFirstRecord(ImageFH, imagePL, img1);
-		RID name1 = new RID();
-		FSReturnVals nameRID1 = crec.ReadFirstRecord(NameFH, namePL, name1);
+		TinyRec img1 = new TinyRec();
+		FSReturnVals retImg1 = crec.ReadFirstRecord(ImageFH, img1);
+		TinyRec name1 = new TinyRec();
+		FSReturnVals retName1 = crec.ReadFirstRecord(NameFH, name1);
 		if(img1 == null || name1 == null){
 			System.out.println("Error in UnitTest6:  Failed to read the first record");
 			return;
@@ -119,17 +120,26 @@ public class UnitTest6 {
 		for(int i = 0; i < SuperHeros.length; i++){
 			String filename = SuperHeros[i];  //This is the file in the local directory
 			if(i != 0){
-				RID img2 = new RID();
-				FSReturnVals imgRID2 = crec.ReadNextRecord(ImageFH, img1, imagePL, img2);
+				TinyRec img2 = new TinyRec();
+				FSReturnVals retval1 = crec.ReadNextRecord(ImageFH, img1.getRID(), img2);
+				if(img2.getRID() == null){
+					System.out.println("Error in UnitTest6:  Failed to read the next record");
+					return;
+				}
 				img1 = img2;
-				RID name2 = new RID();
-				FSReturnVals nameRID2 = crec.ReadNextRecord(NameFH, name1, namePL, name2);
+				TinyRec name2 = new TinyRec();
+				FSReturnVals retval2 = crec.ReadNextRecord(NameFH, name1.getRID(), name2);
+				if(name2.getRID() == null){
+					System.out.println("Error in UnitTest6:  Failed to read the next record");
+					return;
+				}
 				name1 = name2;
 			}
 			byte[] indexBytes = ByteBuffer.allocate(intSize).putInt(i).array();
 			long size = 0;
 			byte[] contentBytes = getBytesFromFile(new File("SuperHeros/" + filename + ".jpg"), size);
 			byte[] sizeBytes = ByteBuffer.allocate(intSize).putInt((int)size).array();
+			imagePL = img1.getPayload();
 			for(int j = 0; j < imagePL.length; j++){
 				if(j < 4){
 					if(imagePL[j] != indexBytes[j]){
@@ -152,6 +162,7 @@ public class UnitTest6 {
 			contentBytes = filename.getBytes();
 			size = sizeBytes.length;
 			sizeBytes = ByteBuffer.allocate(intSize).putInt(sizeBytes.length).array();
+			namePL = name1.getPayload();
 			for(int j = 0; j < namePL.length; j++){
 				if(j < 4){
 					if(namePL[j] != indexBytes[j]){

@@ -26,34 +26,23 @@ public class UnitTest1 {
 		String dir1 = "Shahram";
 		FSReturnVals fsrv = cfs.CreateDir("/", dir1);
 		if ( fsrv != FSReturnVals.Success ){
-			System.out.println("Unit test 1 result: fail!-1");
+			System.out.println("Unit test 1 result: fail!");
     		return;
 		}
 		String[] gen1 = new String[N];
 		for(int i = 1; i <= N; i++){
 			fsrv = cfs.CreateDir("/" + dir1 + "/", String.valueOf(i));
 			if( fsrv != FSReturnVals.Success ){
-				System.out.println("Unit test 1 result: fail!-2");
+				System.out.println("Unit test 1 result: fail!");
 	    		return;
 			}
-			gen1[i - 1] = "/" + dir1 + "/" + i+"/";//had to edit
+			gen1[i - 1] = "/" + dir1 + "/" + i;
 		}
-		//cfs.displayNamespace();
-		String[] ret1 = cfs.ListDir("/" + dir1+"/");//had to edit
 		
-		/*for (int i = 0; i < ret1.length; i++)
-		{
-			System.out.println(ret1[i]);
-		}
-		System.out.println();
-		for (int i = 0; i < gen1.length; i++)
-		{
-			System.out.println(gen1[i]);
-		}
-		System.out.println();*/
+		String[] ret1 = cfs.ListDir("/" + dir1);
 		boolean compare1 = compareArrays(gen1, ret1);
 		if(compare1 == false){
-			System.out.println("Unit test 1 result: fail!-3");
+			System.out.println("Unit test 1 result: fail!");
     		return;
 		}
 		
@@ -61,7 +50,7 @@ public class UnitTest1 {
 		String dir2 = "Ghandeharizadeh";
 		fsrv = cfs.CreateDir("/", dir2);
 		if( fsrv != FSReturnVals.Success ){
-			System.out.println("Unit test 1 result: fail!-4");
+			System.out.println("Unit test 1 result: fail!");
     		return;
 		}
 		String[] gen2 = new String[N];
@@ -69,18 +58,17 @@ public class UnitTest1 {
 		for(int i = 1; i <= N; i++){
 			fsrv = cfs.CreateDir(prev + "/", String.valueOf(i));
 			if( fsrv != FSReturnVals.Success ){
-				System.out.println("Unit test 1 result: fail!-5");
+				System.out.println("Unit test 1 result: fail!");
 	    		return;
 			}
 			prev = prev + "/" + i;
-			gen2[i - 1] = prev+"/";//had to change
+			gen2[i - 1] = prev;
 		}	
 		
-		ret1 = cfs.ListDir("/" + dir2+"/");//had to change
-		
+		ret1 = cfs.ListDir("/" + dir2);
 		compare1 = compareArrays(gen2, ret1);
 		if(compare1 == false){
-			System.out.println("Unit test 1 result: fail!-6");
+			System.out.println("Unit test 1 result: fail!");
     		return;
 		}
 		
