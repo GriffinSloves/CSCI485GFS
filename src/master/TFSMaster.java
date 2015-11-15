@@ -597,7 +597,9 @@ public class TFSMaster{
 			
 			//check if directory exists
 			String dirname = (String) ois.readObject();
-			boolean checkDirExists = namespace.contains(srcDirectory+"/"+dirname);//if this returns null, there is no match
+			//the folllowing check should fail if the directory already exists in two forms
+			// src/directoryToSearch or src/directoryToSearch/ should both fail
+			boolean checkDirExists = (namespace.contains(srcDirectory+"/"+dirname)||namespace.contains(srcDirectory+"/"+dirname+"/"));//if this returns null, there is no match
 			if (checkDirExists) {
 				oos.writeObject("dir_exists");
 				oos.flush();
@@ -807,7 +809,7 @@ public class TFSMaster{
 			while (it.hasNext())
 			{
 				String temp = (String)it.next();
-				if (temp.startsWith(target)&&!temp.equals(target))//if it is a match -- WONT THIS GET ALL THE SUBFOLDERS OF SUBFOLDERS
+				if (temp.startsWith(target)&& !(temp.equals(target)||(temp.equals(target+"/") )))//if it is a match -- WONT THIS GET ALL THE SUBFOLDERS OF SUBFOLDERS
 				{
 					contents.addElement(temp);
 				}

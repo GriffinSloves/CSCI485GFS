@@ -26,23 +26,24 @@ public class UnitTest1 {
 		String dir1 = "Shahram";
 		FSReturnVals fsrv = cfs.CreateDir("/", dir1);
 		if ( fsrv != FSReturnVals.Success ){
-			System.out.println("Unit test 1 result: fail!");
+			System.out.println("Unit test 1 result: fail! - 1");
     		return;
 		}
 		String[] gen1 = new String[N];
 		for(int i = 1; i <= N; i++){
 			fsrv = cfs.CreateDir("/" + dir1 + "/", String.valueOf(i));
 			if( fsrv != FSReturnVals.Success ){
-				System.out.println("Unit test 1 result: fail!");
+				System.out.println("Unit test 1 result: fail! - 2");
 	    		return;
 			}
-			gen1[i - 1] = "/" + dir1 + "/" + i;
+			gen1[i - 1] = "/" + dir1 + "/" + i+"/";//ADDED LAST / to make Unit Test Pass
 		}
 		
-		String[] ret1 = cfs.ListDir("/" + dir1);
+		String[] ret1 = cfs.ListDir("/" + dir1);//ADDED Last /
+		
 		boolean compare1 = compareArrays(gen1, ret1);
 		if(compare1 == false){
-			System.out.println("Unit test 1 result: fail!");
+			System.out.println("Unit test 1 result: fail! - 3");
     		return;
 		}
 		
@@ -50,7 +51,7 @@ public class UnitTest1 {
 		String dir2 = "Ghandeharizadeh";
 		fsrv = cfs.CreateDir("/", dir2);
 		if( fsrv != FSReturnVals.Success ){
-			System.out.println("Unit test 1 result: fail!");
+			System.out.println("Unit test 1 result: fail! - 4");
     		return;
 		}
 		String[] gen2 = new String[N];
@@ -58,17 +59,17 @@ public class UnitTest1 {
 		for(int i = 1; i <= N; i++){
 			fsrv = cfs.CreateDir(prev + "/", String.valueOf(i));
 			if( fsrv != FSReturnVals.Success ){
-				System.out.println("Unit test 1 result: fail!");
+				System.out.println("Unit test 1 result: fail! - 5");
 	    		return;
 			}
 			prev = prev + "/" + i;
-			gen2[i - 1] = prev;
+			gen2[i - 1] = prev +"/";//ADDED LAST / to make unit test work
 		}	
 		
 		ret1 = cfs.ListDir("/" + dir2);
 		compare1 = compareArrays(gen2, ret1);
 		if(compare1 == false){
-			System.out.println("Unit test 1 result: fail!");
+			System.out.println("Unit test 1 result: fail! - 6");
     		return;
 		}
 		

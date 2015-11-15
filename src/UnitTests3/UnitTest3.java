@@ -22,7 +22,7 @@ public class UnitTest3 {
 		String dir1 = "ShahramGhandeharizadeh";
 		FSReturnVals fsrv = cfs.CreateDir("/" + dir1 + "/", "CSCI485");
 		if( fsrv != FSReturnVals.Success ){
-			System.out.println("Unit test 3 result: fail!");
+			System.out.println("Unit test 3 result: fail! - 1");
     		return;
 		}
 		
@@ -30,7 +30,7 @@ public class UnitTest3 {
 		for(int i = 1; i <= N; i++){
 			fsrv = cfs.CreateFile("/" + dir1 + "/CSCI485/", "Lecture" + i);
 			if( fsrv != FSReturnVals.Success ){
-				System.out.println("Unit test 3 result: fail!");
+				System.out.println("Unit test 3 result: fail! - 2");
 	    		return;
 			}
 		}
@@ -39,7 +39,7 @@ public class UnitTest3 {
 		for(int i = 1; i <= N; i++){
 			fsrv = cfs.DeleteFile("/" + dir1 + "/CSCI485/", "Lecture" + i);
 			if( fsrv != FSReturnVals.Success ){
-				System.out.println("Unit test 3 result: fail!");
+				System.out.println("Unit test 3 result: fail! - 3");
 	    		return;
 			}
 		}
@@ -49,7 +49,7 @@ public class UnitTest3 {
 		for(int i = 1; i <= N; i++){
 			fsrv = cfs.CreateFile("/" + dir2 + "/2i/", "Lecture" + i);
 			if( fsrv != FSReturnVals.Success ){
-				System.out.println("Unit test 3 result: fail!");
+				System.out.println("Unit test 3 result: fail! - 4");
 	    		return;
 			}
 		}
@@ -58,7 +58,7 @@ public class UnitTest3 {
 		for(int i = 1; i <= N; i++){
 			fsrv = cfs.DeleteFile("/" + dir2 + "/2i/", "Lecture" + i);
 			if( fsrv != FSReturnVals.Success ){
-				System.out.println("Unit test 3 result: fail!");
+				System.out.println("Unit test 3 result: fail! - 5");
 	    		return;
 			}
 		}
