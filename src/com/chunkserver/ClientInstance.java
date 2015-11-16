@@ -23,6 +23,7 @@ public class ClientInstance extends Thread
 	public static final int ReadLastRecord = 108;
 	public static final int ReadNextRecord = 109;
 	public static final int ReadPreviousRecord = 110;
+	public static final int CloseSockets = 111;
 	
 	//Replies provided by the server
 	public static final int TRUE = 1;
@@ -50,12 +51,13 @@ public class ClientInstance extends Thread
 			byte[] CHinBytes;
 			byte[] payload;
 			RID rid;
+			int CMD = 0;
 			//Use the existing input and output stream as long as the client is connected
-			while (!ClientConnection.isClosed()) {
-				int CMD = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+			while (!ClientConnection.isClosed() && CMD != CloseSockets) {
+				CMD = ChunkServer.ReadIntFromInputStream("ClientInstance0", ReadInput);
+				
 				switch (CMD){
 				case CreateChunkCMD:
-					System.out.println("ClientIntsance is trying to createCHunk");
 					String chunkhandle = cs.createChunk();
 					byte[] CHinbytes = chunkhandle.getBytes();
 					WriteOutput.writeInt(CHinbytes.length);
@@ -64,8 +66,8 @@ public class ClientInstance extends Thread
 					break;
 
 				case ReadChunkCMD:
-					offset =  ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
-					payloadlength =  ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					offset =  ChunkServer.ReadIntFromInputStream("ClientInstance1", ReadInput);
+					payloadlength =  ChunkServer.ReadIntFromInputStream("ClientInstance2", ReadInput);
 					chunkhandlesize = 1;
 					if (chunkhandlesize < 0)
 						System.out.println("Error in ChunkServer.java, ReadChunkCMD has wrong size.");
@@ -85,9 +87,9 @@ public class ClientInstance extends Thread
 
 				case WriteChunkCMD:
 					
-					payloadlength =  ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					payloadlength =  ChunkServer.ReadIntFromInputStream("ClientInstance3", ReadInput);
 					payload = ChunkServer.RecvPayload("ChunkServer", ReadInput, payloadlength);
-					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ClientInstance3", ReadInput);
 					if (chunkhandlesize < 0)
 						System.out.println("Error in ChunkServer.java, WritehChunkCMD has wrong size.");
 					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
@@ -98,8 +100,8 @@ public class ClientInstance extends Thread
 					WriteOutput.flush();
 					break;
 				case DeleteRecord:
-					int recordIndex = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);		
-					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					int recordIndex = ChunkServer.ReadIntFromInputStream("ClientInstance4", ReadInput);		
+					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ClientInstance4", ReadInput);
 					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
 					ChunkHandle = (new String(CHinBytes)).toString();					
 					if(cs.deleteRecord(ChunkHandle, recordIndex)) {
@@ -112,13 +114,12 @@ public class ClientInstance extends Thread
 					break;
 					
 				case ReadFirstRecord:
-					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ClientInstance5", ReadInput);
 					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
 					ChunkHandle = (new String(CHinBytes)).toString();
 					rid = new RID(ChunkHandle, 0);
 					//If read record failed, rid.index will be -1
 					payload = cs.readRecord(rid, true);
-					
 					if (payload == null)
 						WriteOutput.writeInt(-1);
 					else {
@@ -130,7 +131,7 @@ public class ClientInstance extends Thread
 					break;
 					
 				case ReadLastRecord:
-					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ClientInstance6", ReadInput);
 					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
 					ChunkHandle = (new String(CHinBytes)).toString();
 					int index = cs.getLastIndex(ChunkHandle);
@@ -150,12 +151,12 @@ public class ClientInstance extends Thread
 					break;
 				
 				case ReadNextRecord:
-					int previousIndex = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
-					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					int nextIndex = ChunkServer.ReadIntFromInputStream("ClientInstance7", ReadInput);
+					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ClientInstance7", ReadInput);
 					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
 					ChunkHandle = (new String(CHinBytes)).toString();
 										
-					rid = new RID(ChunkHandle, previousIndex+1);
+					rid = new RID(ChunkHandle, nextIndex);
 					payload = cs.readRecord(rid, true);
 					
 					if(payload == null) {
@@ -170,12 +171,15 @@ public class ClientInstance extends Thread
 					break;
 					
 				case ReadPreviousRecord:
-					previousIndex = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
-					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+					index = ChunkServer.ReadIntFromInputStream("ClientInstance8", ReadInput);
+					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ClientInstance8", ReadInput);
 					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
 					ChunkHandle = (new String(CHinBytes)).toString();
-										
-					rid = new RID(ChunkHandle, previousIndex-1);
+					if(index == -1)
+					{
+						index = cs.getLastIndex(ChunkHandle);
+					}
+					rid = new RID(ChunkHandle, index);
 					payload = cs.readRecord(rid, false);
 					
 					if(payload == null) {
@@ -188,8 +192,8 @@ public class ClientInstance extends Thread
 
 					WriteOutput.flush();
 					break;				
-					
-					
+				case CloseSockets:
+					break;
 				default:
 					System.out.println("Error in ChunkServer, specified CMD "+CMD+" is not recognized.");
 					break;
@@ -199,7 +203,7 @@ public class ClientInstance extends Thread
 			System.out.println("Client Disconnected");
 		} finally {
 			try {
-				if (ClientConnection != null)
+				if (ClientConnection != null && !ClientConnection.isClosed())
 					ClientConnection.close();
 				if (ReadInput != null)
 					ReadInput.close();

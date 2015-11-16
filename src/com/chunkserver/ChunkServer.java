@@ -26,6 +26,8 @@ import com.client.Client;
 import com.client.RID;
 import com.interfaces.ChunkServerInterface;
 
+import master.Location;
+
 /**
  * implementation of interfaces at the chunkserver side
  * @author Shahram Ghandeharizadeh
@@ -57,7 +59,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	public static final int MasterPort = 6789;
 	
 	private HashMap<String, Lease> LeaseMap;
-	private HashMap<String, String[]> ChunkReplicaMap;
+	private HashMap<String, Location[]> ChunkReplicaMap;
 	
 	private ServerSocket ss;
 	private Socket MasterConnection;
@@ -211,7 +213,6 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			byte [] intBuf = new byte[4];
 			if(!file.exists())
 			{
-				System.out.println("Creating new file in ChunkServer.append");
 				raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
 				raf.setLength(4096);
 				//Write Header
@@ -231,11 +232,14 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 				raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
 			}
 			
+			raf.seek(0);
 			raf.read(intBuf, 0, 4);
 			int numRecords = ChunkServer.convertBytesToInt(intBuf);
-			raf.read(intBuf, 4, 4);
+			raf.seek(4);
+			raf.read(intBuf, 0, 4);
 			int offset = ChunkServer.convertBytesToInt(intBuf);
-			raf.read(intBuf, 8, 4);
+			raf.seek(8);
+			raf.read(intBuf, 0, 4);
 			int endSpace = ChunkServer.convertBytesToInt(intBuf);
 			int size = payload.length;
 			if(offset + size + 8 > endSpace) //Too big of a payload; 8 because we need to write size of payload, and offset. 
@@ -247,12 +251,14 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			//Write record size
 			if(!writeChunk(ChunkHandle, intBuf, offset))
 			{
+				System.out.println("Write failed in ChunkServer.append()");
 				raf.close();
 				return -1;
 			}
 			//Write record
 			if(!writeChunk(ChunkHandle, payload, offset + 4))
 			{
+				System.out.println("Write failed in ChunkServer.append()");
 				raf.close();
 				return -1;
 			}
@@ -262,6 +268,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			intBuf = ChunkServer.convertIntToBytes(offset);
 			if(!writeChunk(ChunkHandle, intBuf, endSpace))
 			{
+				System.out.println("Write failed in ChunkServer.append()");
 				raf.close();
 				return -1;
 			}
@@ -270,6 +277,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			intBuf = ChunkServer.convertIntToBytes(numRecords);
 			if(!writeChunk(ChunkHandle, intBuf, 0))
 			{
+				System.out.println("Write failed in ChunkServer.append()");
 				raf.close();
 				return -1;
 			}
@@ -278,6 +286,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			intBuf = ChunkServer.convertIntToBytes(offset);
 			if(!writeChunk(ChunkHandle, intBuf, 4))
 			{
+				System.out.println("Write failed in ChunkServer.append()");
 				raf.close();
 				return -1;
 			}
@@ -285,6 +294,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			intBuf = ChunkServer.convertIntToBytes(endSpace);
 			if(!writeChunk(ChunkHandle, intBuf, 8))
 			{
+				System.out.println("Write failed in ChunkServer.append()");
 				raf.close();
 				return -1;
 			}
@@ -301,7 +311,8 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		try {
 			RandomAccessFile raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
 			byte [] intBuf = new byte[4];
-			raf.read(intBuf, 8, 4);
+			raf.seek(8);
+			raf.read(intBuf, 0, 4);
 			int endSpace = ChunkServer.convertBytesToInt(intBuf);
 			int offset = 4096 - (index + 1) * 4;
 			if(endSpace > offset)
@@ -327,6 +338,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	
 	public byte[] readRecord(RID rid, boolean forward) 
 	{
+		//System.out.println("reading record: " + rid.ChunkHandle);
 		String ChunkHandle = rid.ChunkHandle;
 		int index = rid.index;
 		byte [] payload = null;
@@ -337,23 +349,26 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			RandomAccessFile raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
 			int indexOffset;
 			int offset = 0;
-			raf.read(intBuf, 8, 4);
+			raf.seek(8);
+			raf.read(intBuf, 0, 4);
 			int endSpace = ChunkServer.convertBytesToInt(intBuf);
 			while(!foundRecord)
 			{
-				indexOffset = 4096 - (index + 1) * 4;
+				indexOffset = 4096 - ((index + 1) * 4);
 				//Error checking, making sure we're always checking a valid record
-				if(endSpace < indexOffset)
+				if(endSpace > indexOffset)
 				{
-					rid.index = -1;
+					//ystem.out.println("endSpace: " + endSpace);
+					raf.close();
 					return null;
 				}
 				if(index < 0)
 				{
-					rid.index = -1;
+					raf.close();
 					return null;
 				}
-				raf.read(intBuf, indexOffset, 4);
+				raf.seek(indexOffset);
+				raf.read(intBuf, 0, 4);
 				offset = ChunkServer.convertBytesToInt(intBuf);
 				//If deleted, move to the next record
 				if(offset == -1)
@@ -372,9 +387,12 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 					foundRecord = true;
 				}
 			}
-			raf.read(intBuf, offset, 4);
+			//System.out.println("offset: " + offset);
+			raf.seek(offset);
+			raf.read(intBuf, 0, 4);
 			int size = ChunkServer.convertBytesToInt(intBuf);
-			payload = readChunk(ChunkHandle, offset + 4, size);
+			raf.seek(offset + 4);
+			payload = readChunk(ChunkHandle, 0, size);
 			raf.close();
 			return payload;
 		}
@@ -391,10 +409,11 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			//If the file corresponding to ChunkHandle does not exist then create it before writing into it
 			RandomAccessFile raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
 			byte [] intBuf = new byte[4];
-			raf.read(intBuf, 8, 4);
+			raf.seek(8);
+			raf.read(intBuf, 0, 4);
 			int endSpace = ChunkServer.convertBytesToInt(intBuf);
 			int index = (4096 - endSpace - 4) / 4;
-			
+			raf.close();
 			return index;
 			
 		} catch (IOException ex) {
@@ -458,7 +477,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			WriteOutput.write(payload);
 			WriteOutput.flush();
 			
-			int retVal = ChunkServer.ReadIntFromInputStream("ChunkServer", ReadInput);
+			int retVal = ChunkServer.ReadIntFromInputStream("ClientInstance10", ReadInput);
 			if(retVal == TRUE)
 			{
 				lease.updateLeaseCS();
@@ -572,11 +591,11 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 					InputBuff[ReadBytes+j]=tmpbuf[j];
 				}
 			} catch (IOException e) {
-				System.out.println("Error in RecvPayload ("+caller+"), failed to read "+sz+" after reading "+ReadBytes+" bytes.");
+				System.out.println("Error in RecvPayloadCS ("+caller+"), failed to read "+sz+" after reading "+ReadBytes+" bytes.");
 				return null;
 			}
 			if (cntr == -1) {
-				System.out.println("Error in RecvPayload ("+caller+"), failed to read "+sz+" bytes.");
+				System.out.println("Error in RecvPayloadCS ("+caller+"), failed to read "+sz+" bytes.");
 				return null;
 			}
 			else ReadBytes += cntr;

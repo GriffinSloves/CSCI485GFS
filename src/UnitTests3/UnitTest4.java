@@ -59,6 +59,11 @@ public class UnitTest4 {
 		FSReturnVals retRR = crec.ReadFirstRecord(fh, r1);
 		int cntr = 1;
 		ArrayList<RID> vect = new ArrayList<RID>();
+		if(r1.getRID() == null)
+		{
+			System.out.println("r1.getRID == null");
+		}
+		System.out.println("Finished reading first record");
 		while (r1 != null){
 			TinyRec r2 = new TinyRec();
 			FSReturnVals retval = crec.ReadNextRecord(fh, r1.getRID(), r2);
@@ -93,6 +98,7 @@ public class UnitTest4 {
 		
 		fsrv = cfs.CloseFile(fh);
 		if(cntr != NumRecs){
+			System.out.println("cntr: " + cntr);
 			System.out.println("Unit test 4 result: fail!");
     		return;
 		}

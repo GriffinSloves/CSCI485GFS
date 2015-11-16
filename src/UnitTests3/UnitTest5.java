@@ -55,6 +55,7 @@ public class UnitTest5 {
 		fsrv = cfs.CloseFile(fh);
 		ofd = cfs.OpenFile("/" + dir1 + "/emp1", fh);
 		TinyRec r1 = new TinyRec();
+		System.out.println("Right before reading the chunks");
 		FSReturnVals retRR = crec.ReadLastRecord(fh, r1);
 		int cntr = 0;
 		ArrayList<RID> vect = new ArrayList<RID>();
