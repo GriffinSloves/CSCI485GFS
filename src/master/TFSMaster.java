@@ -12,6 +12,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -61,7 +62,11 @@ public class TFSMaster{
 		readMetaData();
 		ServerSocket ss = null;
 		try{
-			ss = new ServerSocket(8001);//find open socket
+			ss = new ServerSocket(0);//find open socket
+			
+			//write information to master's config file for chunkservers and clients to consume
+			setUpConfigFile(ss);
+			
 			while (true)
 			{
 				Socket s = ss.accept();
@@ -72,6 +77,27 @@ public class TFSMaster{
 		}
 		catch (IOException ioe) {ioe.printStackTrace();}
 	}
+	
+	public void setUpConfigFile(ServerSocket ss){
+		try{
+			FileWriter fw = new FileWriter(MasterConfigFile);
+			BufferedWriter bw = new BufferedWriter(fw);
+			
+			String masterIP = InetAddress.getLocalHost().getHostAddress();
+			int portNum = ss.getLocalPort();
+			
+			bw.write(masterIP+":"+portNum+System.getProperty("line.separator"));
+			bw.flush();
+			
+			bw.close();
+			
+		}
+		catch (IOException ioe){
+			System.out.println("Error setting up master's config file");
+			ioe.printStackTrace();
+		}
+	}
+	
 	//this will read the masterLogConfig so the master knows which log file is the most recent
 	//implements checkpointing
 	public void readMasterLogConfig()

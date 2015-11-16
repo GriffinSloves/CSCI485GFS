@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.StringTokenizer;
 import java.util.Vector;
 
 import com.chunkserver.ChunkServer;
@@ -48,10 +49,14 @@ public class ClientFS {
 		if (ClientSocket != null) return; //The client is already connected
 		try {
 			BufferedReader binput = new BufferedReader(new FileReader(TFSMaster.MasterConfigFile));
-			String port = binput.readLine();
-			port = port.substring( port.indexOf(':')+1 );
-			ServerPort = Integer.parseInt(port);
-			ClientSocket = new Socket("127.0.0.1", 8001);//should client be reading from config?
+			String portAndIP = binput.readLine();
+			StringTokenizer str = new StringTokenizer(portAndIP,":");
+			String masterIP = str.nextToken();//get the master's ip addres
+			ServerPort = Integer.parseInt(str.nextToken());//get the port that master listeningon
+			
+			//port = port.substring( port.indexOf(':')+1 );
+			//ServerPort = Integer.parseInt(port);
+			ClientSocket = new Socket(masterIP,ServerPort);//should client be reading from config?
 			
 			WriteOutput = new ObjectOutputStream(ClientSocket.getOutputStream());
 			ReadInput = new ObjectInputStream(ClientSocket.getInputStream());
