@@ -220,11 +220,14 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 				//4-7, Start of next record
 				//8-11, End of free space
 				intBuf = ChunkServer.convertIntToBytes(0);
-				writeChunk(ChunkHandle, intBuf, 0);
+				raf.seek(0);
+				raf.write(intBuf, 0, intBuf.length);
 				intBuf = ChunkServer.convertIntToBytes(12);
-				writeChunk(ChunkHandle, intBuf, 4);
+				raf.seek(4);
+				raf.write(intBuf, 0, intBuf.length);
 				intBuf = ChunkServer.convertIntToBytes(4096);
-				writeChunk(ChunkHandle, intBuf, 8);
+				raf.seek(8);
+				raf.write(intBuf, 0, intBuf.length);
 				
 			}
 			else
@@ -249,55 +252,31 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			}
 			intBuf = ChunkServer.convertIntToBytes(size);
 			//Write record size
-			if(!writeChunk(ChunkHandle, intBuf, offset))
-			{
-				System.out.println("Write failed in ChunkServer.append()");
-				raf.close();
-				return -1;
-			}
+			raf.seek(offset);
+			raf.write(intBuf, 0, intBuf.length);
 			//Write record
-			if(!writeChunk(ChunkHandle, payload, offset + 4))
-			{
-				System.out.println("Write failed in ChunkServer.append()");
-				raf.close();
-				return -1;
-			}
+			raf.seek(offset + 4);
+			raf.write(payload, 0, payload.length);
 			//Write metadata
 			//Write offset of current record
 			endSpace -= 4;
 			intBuf = ChunkServer.convertIntToBytes(offset);
-			if(!writeChunk(ChunkHandle, intBuf, endSpace))
-			{
-				System.out.println("Write failed in ChunkServer.append()");
-				raf.close();
-				return -1;
-			}
+			raf.seek(endSpace);
+			raf.write(intBuf, 0, intBuf.length);
 			//Write numRecords
 			numRecords++;
 			intBuf = ChunkServer.convertIntToBytes(numRecords);
-			if(!writeChunk(ChunkHandle, intBuf, 0))
-			{
-				System.out.println("Write failed in ChunkServer.append()");
-				raf.close();
-				return -1;
-			}
+			raf.seek(0);
+			raf.write(intBuf, 0, intBuf.length);
 			//Write start of next record
 			offset = offset + size + 4;
 			intBuf = ChunkServer.convertIntToBytes(offset);
-			if(!writeChunk(ChunkHandle, intBuf, 4))
-			{
-				System.out.println("Write failed in ChunkServer.append()");
-				raf.close();
-				return -1;
-			}
+			raf.seek(4);
+			raf.write(intBuf, 0, intBuf.length);
 			//Write end of free space
 			intBuf = ChunkServer.convertIntToBytes(endSpace);
-			if(!writeChunk(ChunkHandle, intBuf, 8))
-			{
-				System.out.println("Write failed in ChunkServer.append()");
-				raf.close();
-				return -1;
-			}
+			raf.seek(8);
+			raf.write(intBuf, 0, intBuf.length);
 			
 			raf.close();
 			return numRecords;
@@ -321,11 +300,8 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 				return false;
 			}
 			intBuf = ChunkServer.convertIntToBytes(-1);
-			if(!writeChunk(ChunkHandle, intBuf, offset))
-			{
-				raf.close();
-				return false;
-			}
+			raf.seek(offset);
+			raf.write(intBuf, 0, intBuf.length);
 			
 			raf.close();
 			
