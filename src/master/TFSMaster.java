@@ -15,6 +15,7 @@ import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -245,10 +246,10 @@ public class TFSMaster{
 	}
 	public void applyLog()
 	{
-		if (logSize < 30)return;//don't do anything if the log not at 20lines yet
-		else System.out.println("applying changes to log");
+		if (logSize < 30)return;//don't do anything if the log not at 30 lines yet
+		else System.out.println("Applying log changes from: "+currentLogFile);
 		try {
-			System.out.println("Applying log from: "+currentLogFile);
+			
 			FileReader fr = new FileReader(currentLogFile);
 			BufferedReader br = new BufferedReader(fr);
 			String logLine = br.readLine();
@@ -258,7 +259,7 @@ public class TFSMaster{
 			{
 				StringTokenizer str = new StringTokenizer(logLine,":");
 				String command = str.nextToken();//the first token is the command
-				System.out.println("Processing: "+command);
+				//System.out.println("Processing: "+command);
 				
 				if (command.equals("createDir"))
 				{
@@ -323,7 +324,7 @@ public class TFSMaster{
 			bw.write(src+directoryToCreateName+"/"+System.getProperty("line.separator"));
 			bw.flush();
 			
-			System.out.println("Wrote to namespacefile:" +src+directoryToCreateName+"/"+System.getProperty("line.separator"));
+			//System.out.println("Wrote to namespacefile:" +src+directoryToCreateName+"/"+System.getProperty("line.separator"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -599,9 +600,14 @@ public class TFSMaster{
 			catch (ClassNotFoundException e) {
 					e.printStackTrace();
 			}
+			catch (SocketException se)
+			{
+				System.out.println("Connection reset exception: client disconnected from master");
+			}
 			catch (IOException e) {
 					e.printStackTrace();
 			}
+			
 		}
 		public void createDir() throws IOException, ClassNotFoundException
 		{
