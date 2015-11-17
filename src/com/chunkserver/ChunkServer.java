@@ -1,9 +1,12 @@
 package com.chunkserver;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -20,6 +23,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.StringTokenizer;
 
 import com.chunkserver.ClientInstance;
 import com.client.Client;
@@ -55,8 +59,8 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	public static final int FALSE = 0;
 	
 	
-	public static final String MasterIPAddress = "127.0.0.1";
-	public static final int MasterPort = 6789;
+	public static String MasterIPAddress;
+	public static int MasterPort;
 	
 	private HashMap<String, Lease> LeaseMap;
 	private HashMap<String, Location[]> ChunkReplicaMap;
@@ -87,7 +91,8 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		}
 		try
 		{
-			ss = new ServerSocket(8000);
+			processMasterConfig();
+			ss = new ServerSocket(MasterPort);
 			/*MasterConnection = new Socket(MasterIPAddress, MasterPort);
 			WriteOutput = new ObjectOutputStream(MasterConnection.getOutputStream());
 			ReadInput = new ObjectInputStream(MasterConnection.getInputStream());
@@ -118,6 +123,27 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		//rlt.start();
 	}
 	
+	public void processMasterConfig()
+	{
+		FileReader fr;
+		try {
+			fr = new FileReader("MasterConfig.txt");
+			BufferedReader br = new BufferedReader(fr);
+			
+			String IPandPort = br.readLine();
+			StringTokenizer str = new StringTokenizer(IPandPort,":");
+			MasterIPAddress = str.nextToken();//read the master's ip
+			MasterPort = Integer.parseInt(str.nextToken());//read the port and convert to int
+			
+		} catch (FileNotFoundException e) {
+			System.out.println("Error in CS constructor: reading MasterConfig file.");
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("Error in CS constructor: reading MasterConfig file.");
+			e.printStackTrace();
+		}
+		
+	}
 	
 	public void run()
 	{

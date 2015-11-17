@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.Vector;
 
 import com.chunkserver.ChunkServer;
@@ -28,23 +29,24 @@ public class ClientRec {
 	static Socket MasterConnection;
 	static ObjectOutputStream WriteOutputMaster;
 	static ObjectInputStream ReadInputMaster;
-	public static final String MasterIPAddress = "127.0.0.1";
-	public static final int MasterPort = 43317;
+	public static String MasterIPAddress;
+	public static  int MasterPort;
 	
 	public ClientRec() { //Will have to change. 
 						 //The client will connect to different chunk servers depending on which one as the data
 		if (MasterConnection != null) return; //The client is already connected
 		try {
-			BufferedReader binput = new BufferedReader(new FileReader(ChunkServer.ClientConfigFile));
-			String port = binput.readLine();
-			port = port.substring( port.indexOf(':')+1 );
-			int ServerPort = Integer.parseInt(port);
+			BufferedReader binput = new BufferedReader(new FileReader(TFSMaster.MasterConfigFile));
+			String portAndIP = binput.readLine();
+			StringTokenizer str = new StringTokenizer(portAndIP,":");
+			MasterIPAddress = str.nextToken();//get the master's ip addres
+			MasterPort = Integer.parseInt(str.nextToken());//get the port that master listeningon;
 			
 			//MasterConnection = new Socket("127.0.0.1", MasterPort); //should client be reading from config?
 			//WriteOutputMaster = new ObjectOutputStream(MasterConnection.getOutputStream());
 			//ReadInputMaster = new ObjectInputStream(MasterConnection.getInputStream());
 		}catch (FileNotFoundException e) {
-			System.out.println("Error (Client), the config file "+ ChunkServer.ClientConfigFile +" containing the port of the ChunkServer is missing.");
+			System.out.println("Error (Client), the config file "+ TFSMaster.MasterConfigFile +" containing the port of the ChunkServer is missing.");
 		}catch (IOException e) {
 			System.out.println("Can't find file.-1");
 		}
