@@ -14,14 +14,14 @@ public class StartServersAndUnitTest
 		ChunkServer cs = new ChunkServer();
 		cs.start();
 		//UnitTest4.main(args);
-		UnitTest5.main(args);
-		/*try
+		//UnitTest5.main(args);
+		try
 		{
 			UnitTest6.main(args);
 		}
 		catch(Exception e)
 		{
 			System.out.println(e.getMessage());
-		}*/
+		}
 	}
 }

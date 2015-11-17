@@ -71,11 +71,6 @@ public class ClientRec {
 		Location primaryLoc = ofh.getPrimaryLocation();
 		int count = 0;
 		int size;
-		//System.out.println("ChunkHandle.size: " + ChunkHandles.size());
-		/*for(int i = 0; i < ChunkHandles.size(); i++)
-		{
-			System.out.println("ChunkHandles[i]: " + ChunkHandles.get(i));
-		}*/
 		try {
 			//System.out.println("InCLientRec");
 			Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
@@ -183,6 +178,7 @@ public class ClientRec {
 		try {
 			Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 			ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
+			WriteOutputCS.flush();
 			ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 			
 		//	WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
@@ -236,7 +232,6 @@ public class ClientRec {
 		RID RecordID;
 		byte [] payload;
 		try {
-			System.out.println("In readFirstRecord");
 			Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 			ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 			ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
@@ -305,6 +300,7 @@ public class ClientRec {
 		try {
 			Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 			ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
+			WriteOutputCS.flush();
 			ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 			
 			for(int i = ChunkHandles.size()-1; i >= 0; i--){
@@ -412,7 +408,6 @@ public class ClientRec {
 					CSConnection.close();
 					return FSReturnVals.Success;
 				}
-				System.out.println("Moving to next chunkHandle");
 			}
 			System.out.println("Record didn't exist");
 			WriteOutputCS.writeInt(ClientInstance.CloseSockets);
@@ -455,9 +450,14 @@ public class ClientRec {
 		RID RecordID;
 		byte [] payload;
 		int index = pivot.index - 1;
+		if(index == -1)
+		{
+			indexOfChunkHandle--;
+		}
 		try {
 			Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 			ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
+			WriteOutputCS.flush();
 			ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 			
 			for(int i = indexOfChunkHandle; i >= 0; i--) {

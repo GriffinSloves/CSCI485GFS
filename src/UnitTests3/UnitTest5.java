@@ -57,7 +57,10 @@ public class UnitTest5 {
 		TinyRec r1 = new TinyRec();
 		System.out.println("Right before reading the chunks");
 		FSReturnVals retRR = crec.ReadLastRecord(fh, r1);
-		int cntr = 0;
+		System.out.println("Read last record");
+		System.out.println("r1.ChunkHandle: " + r1.getRID().ChunkHandle);
+		System.out.println("r1.index: " + r1.getRID().index);
+		int cntr = 1;
 		ArrayList<RID> vect = new ArrayList<RID>();
 		while (r1 != null){
 			TinyRec r2 = new TinyRec();
@@ -87,6 +90,7 @@ public class UnitTest5 {
 		
 		fsrv = cfs.CloseFile(fh);
 		if(cntr != NumRecs){
+			System.out.println("cntr = " + cntr);
 			System.out.println("Unit test 5 result: fail!");
     		return;
 		}
