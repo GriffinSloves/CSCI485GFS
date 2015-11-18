@@ -1,12 +1,14 @@
 package com.chunkserver;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -41,6 +43,7 @@ import master.Location;
 public class ChunkServer extends Thread implements ChunkServerInterface {
 	final static String filePath = "csci485/";	//or C:\\newfile.txt
 	public final static String ClientConfigFile = "ClientConfig.txt";
+	public final static String CSConfigFile = "CSConfig.txt";
 	
 	//Used for the file system
 	public static long counter;
@@ -58,6 +61,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	public static final int TRUE = 1;
 	public static final int FALSE = 0;
 	
+	public static final int ChunkSize = 1048576; //1MB
 	
 	public static String MasterIPAddress;
 	public static int MasterPort;
@@ -91,8 +95,13 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		}
 		try
 		{
-			processMasterConfig();
-			ss = new ServerSocket(MasterPort);
+			
+			ss = new ServerSocket(0);
+			setUpConfigFile(ss);
+			if(ss == null)
+			{
+				System.out.println("ss = null");
+			}
 			/*MasterConnection = new Socket(MasterIPAddress, MasterPort);
 			WriteOutput = new ObjectOutputStream(MasterConnection.getOutputStream());
 			ReadInput = new ObjectInputStream(MasterConnection.getInputStream());
@@ -103,8 +112,9 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		catch(IOException ex)
 		{
 			System.out.println("Error (ChunkServer):  Failed to close either a valid connection or its input/output stream.");
+			ex.printStackTrace();
 		}
-		finally {
+	/*	finally {
 			try {
 				if (MasterConnection != null)
 					MasterConnection.close();
@@ -116,12 +126,33 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 				fex.printStackTrace();
 			}
 		}
-		
+		*/
 		//Write to Master all of the chunkhandles being stored on this chunkserver
 		//Every second, check which leases are expiring and renew the necessary ones
 		//RenewLeaseThread rlt = new RenewLeaseThread(this);
 		//rlt.start();
 	}
+	
+	public void setUpConfigFile(ServerSocket ss){
+		try{
+			FileWriter fw = new FileWriter(CSConfigFile);
+			BufferedWriter bw = new BufferedWriter(fw);
+			
+			String masterIP = InetAddress.getLocalHost().getHostAddress();
+			int portNum = ss.getLocalPort();
+			
+			bw.write(masterIP+":"+portNum+System.getProperty("line.separator"));
+			bw.flush();
+			
+			bw.close();
+			
+		}
+		catch (IOException ioe){
+			System.out.println("Error setting up master's config file");
+			ioe.printStackTrace();
+		}
+	}
+	
 	
 	public void processMasterConfig()
 	{
@@ -152,6 +183,10 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			
 			while(true)
 			{
+				if(ss == null)
+				{
+					System.out.println("ss is null");
+				}
 				Socket s = ss.accept(); //Blocking
 				//System.out.println("ChunkServer accepted socket");
 				ClientInstance ci = new ClientInstance(this, s);

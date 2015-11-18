@@ -72,7 +72,7 @@ public class UnitTest6 {
 			System.arraycopy(indexBytes, 0, IMG_rec, 0, indexBytes.length);
 			System.arraycopy(sizeBytes, 0, IMG_rec, indexBytes.length, sizeBytes.length);
 			System.arraycopy(contentBytes, 0, IMG_rec, indexBytes.length + sizeBytes.length, contentBytes.length);
-			
+			System.out.println("IMG_rec.size: " + IMG_rec.length);
 			RID rid = new RID();
 			crec.AppendRecord(ImageFH, IMG_rec, rid);  //append the image record
 			
@@ -85,7 +85,7 @@ public class UnitTest6 {
 			System.arraycopy(indexBytes, 0, NAME_rec, 0, indexBytes.length);
 			System.arraycopy(sizeBytes, 0, NAME_rec, indexBytes.length, sizeBytes.length);
 			System.arraycopy(contentBytes, 0, NAME_rec, indexBytes.length + sizeBytes.length, contentBytes.length);
-			
+			System.out.println("NAME_rec.size: " + NAME_rec.length);
 			rid = new RID();
 			crec.AppendRecord(NameFH, NAME_rec, rid);
 
