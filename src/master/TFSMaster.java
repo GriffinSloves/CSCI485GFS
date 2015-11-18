@@ -539,19 +539,73 @@ public class TFSMaster{
 	{
 		Socket s; TFSMaster master;
 		ObjectInputStream ois; ObjectOutputStream oos;
+		private int typeOfConnection = -1;
+		private String connectedIP;
+		private int connectedPort;
+		//1 is a client 2 is a chunkserver
 		
 		public ServerThread(Socket s, TFSMaster master)
 		{
 			try {
 				oos = new ObjectOutputStream(s.getOutputStream());
 				ois = new ObjectInputStream(s.getInputStream());
+				
+				determineConnectionType();
+				
 				this.master = master;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 		
+		public void determineConnectionType()
+		{
+			try {
+				//wait for connector to tell what type
+				String type = (String) ois.readObject();
+				//System.out.println(type);
+				
+				if (type.equals("clientFS"))
+				{
+					typeOfConnection = 1;
+					return;
+				}
+				if (type.equals("chunkserver"))
+				{
+					typeOfConnection = 2;
+				}
+				
+				//get the IP address of connected client/chunkserver
+				this.connectedIP = (String) ois.readObject();
+				this.connectedPort = Integer.parseInt((String) ois.readObject());
+				
+				
+			} catch (IOException e) {
+				System.out.println("Error in determining connection type");
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				System.out.println("Error in determining connection type");
+				e.printStackTrace();
+			}
+			
+		}
+		
 		public void run()
+		{
+			//if it is a client connecting to master
+			if (this.typeOfConnection == 1)
+			{
+				clientRun();
+			}
+			//if it is a chunkserver connecting to master
+			if (this.typeOfConnection == 2)
+			{
+				whatChunksYouGot();
+				chunkserverRun();
+			}
+			
+		}
+		public void clientRun()
 		{
 			try{
 				while (true)
@@ -607,8 +661,62 @@ public class TFSMaster{
 			catch (IOException e) {
 					e.printStackTrace();
 			}
+		}//end client run
+		
+		public void chunkserverRun()
+		{
+			
+		}//end server run
+		public void whatChunksYouGot()
+		{
+			try {
+				oos.writeObject("What chunks?");
+				oos.flush();
+				
+				String hasChunks = (String) ois.readObject();
+				if (hasChunks.equals("no chunks")) return;
+				
+				String[] chunkHandles = (String[]) ois.readObject();
+				if (chunkHandles == null) {
+					System.out.println("Chunks array from CS was null!");
+					return;
+				}
+				//update the metadata
+				for (int i = 0; i < chunkHandles.length; i++)
+				{
+					//check first if the chunkhandle already exists, on some other CS
+					if (chunkHandlesToServers.containsKey(chunkHandles[i]))
+					{
+						Vector<Location> replicaLocations = chunkHandlesToServers.get(chunkHandles[i]);
+						Location l = new Location(this.connectedIP, connectedPort);
+						boolean add = true;
+						//dont add the location if it already exists
+						for (int x = 0; x < replicaLocations.size(); x++){
+							Location compare = replicaLocations.get(x);
+							if (compare.equals(l))
+							{
+								add = false;
+							}
+						}
+						if (add) replicaLocations.add(l);
+					}
+					
+					//if the chunkhandle didn't already exist
+					Location l = new Location(this.connectedIP, connectedPort);
+					Vector<Location> locationsOfThisChunk = new Vector<Location>();
+					locationsOfThisChunk.addElement(l);
+					String handleToAdd = chunkHandles[i];
+					master.chunkHandlesToServers.put(handleToAdd,locationsOfThisChunk);
+				}
+				
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			}
 			
 		}
+		
 		public void createDir() throws IOException, ClassNotFoundException
 		{
 			//check if the src doesn't exist
@@ -908,7 +1016,6 @@ public class TFSMaster{
 			} catch (IOException e) {
 				e.printStackTrace();
 			}		}
-		
 		public void closeFile()
 		{
 			try {
@@ -1040,7 +1147,6 @@ public class TFSMaster{
 					e.printStackTrace();
 			}
 		}
-		
 		public void NameSpace() {
 			//send confirmation
 			try {

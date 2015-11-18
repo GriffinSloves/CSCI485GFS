@@ -72,7 +72,7 @@ public class UnitTest6 {
 			System.arraycopy(indexBytes, 0, IMG_rec, 0, indexBytes.length);
 			System.arraycopy(sizeBytes, 0, IMG_rec, indexBytes.length, sizeBytes.length);
 			System.arraycopy(contentBytes, 0, IMG_rec, indexBytes.length + sizeBytes.length, contentBytes.length);
-			System.out.println("IMG_rec.size: " + IMG_rec.length);
+			//System.out.println("IMG_rec.size: " + IMG_rec.length);
 			RID rid = new RID();
 			crec.AppendRecord(ImageFH, IMG_rec, rid);  //append the image record
 			
@@ -85,7 +85,7 @@ public class UnitTest6 {
 			System.arraycopy(indexBytes, 0, NAME_rec, 0, indexBytes.length);
 			System.arraycopy(sizeBytes, 0, NAME_rec, indexBytes.length, sizeBytes.length);
 			System.arraycopy(contentBytes, 0, NAME_rec, indexBytes.length + sizeBytes.length, contentBytes.length);
-			System.out.println("NAME_rec.size: " + NAME_rec.length);
+			//System.out.println("NAME_rec.size: " + NAME_rec.length);
 			rid = new RID();
 			crec.AppendRecord(NameFH, NAME_rec, rid);
 
@@ -143,17 +143,17 @@ public class UnitTest6 {
 			for(int j = 0; j < imagePL.length; j++){
 				if(j < 4){
 					if(imagePL[j] != indexBytes[j]){
-						System.out.println("Unit test 6 result: fail!");
+						System.out.println("Unit test 6 result: fail! 1");
 						return;
 					}
 				}else if(j < 8){
 					if(imagePL[j] != sizeBytes[j - 4]){
-						System.out.println("Unit test 6 result: fail!");
+						System.out.println("Unit test 6 result: fail! 2");
 						return;
 					}
 				}else{
 					if(imagePL[j] != contentBytes[j - 8]){
-						System.out.println("Unit test 6 result: fail!");
+						System.out.println("Unit test 6 result: fail! 3");
 						return;
 					}
 				}
@@ -166,17 +166,17 @@ public class UnitTest6 {
 			for(int j = 0; j < namePL.length; j++){
 				if(j < 4){
 					if(namePL[j] != indexBytes[j]){
-						System.out.println("Unit test 6 result: fail!");
+						System.out.println("Unit test 6 result: fail! 4");
 						return;
 					}
 				}else if(j < 8){
 					if(namePL[j] != sizeBytes[j - 4]){
-						System.out.println("Unit test 6 result: fail!");
+						System.out.println("Unit test 6 result: fail! 5");
 						return;
 					}
 				}else{
 					if(namePL[j] != contentBytes[j - 8]){
-						System.out.println("Unit test 6 result: fail!");
+						System.out.println("Unit test 6 result: fail! 6");
 						return;
 					}
 				}

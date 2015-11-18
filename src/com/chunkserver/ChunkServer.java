@@ -44,7 +44,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	final static String filePath = "csci485/";	//or C:\\newfile.txt
 	public final static String ClientConfigFile = "ClientConfig.txt";
 	public final static String CSConfigFile = "CSConfig.txt";
-	
+	public final static String MasterConfigFile = "MasterConfigFile.txt";
 	//Used for the file system
 	public static long counter;
 	
@@ -65,6 +65,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	
 	public static String MasterIPAddress;
 	public static int MasterPort;
+	public int portNum;
 	
 	private HashMap<String, Lease> LeaseMap;
 	private HashMap<String, Location[]> ChunkReplicaMap;
@@ -95,19 +96,12 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		}
 		try
 		{
-			
-			ss = new ServerSocket(8000);
+
+			//open the chunkserver for connections
+			ss = new ServerSocket(0);
+
 			setUpConfigFile(ss);
-			if(ss == null)
-			{
-				System.out.println("ss = null");
-			}
-			/*MasterConnection = new Socket(MasterIPAddress, MasterPort);
-			WriteOutput = new ObjectOutputStream(MasterConnection.getOutputStream());
-			ReadInput = new ObjectInputStream(MasterConnection.getInputStream());
-			WriteOutput.writeObject(ss.getInetAddress().getHostAddress());
-			WriteOutput.writeInt(port);
-			WriteOutput.flush();*/
+			connectToMaster();
 		}
 		catch(IOException ex)
 		{
@@ -133,14 +127,79 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		//rlt.start();
 	}
 	
+	public void connectToMaster(){
+		FileReader fr;
+		try {
+			fr = new FileReader(MasterConfigFile);
+			BufferedReader br = new BufferedReader(fr);
+			
+			String portAndIP = br.readLine();
+			StringTokenizer str = new StringTokenizer(portAndIP,":");
+			this.MasterIPAddress = str.nextToken();//get the master's ip address
+			this.MasterPort = Integer.parseInt(str.nextToken());//get the master's port as int
+			
+			this.MasterConnection = new Socket(MasterIPAddress,MasterPort);
+			this.WriteOutput = new ObjectOutputStream(MasterConnection.getOutputStream());
+			this.ReadInput = new ObjectInputStream(MasterConnection.getInputStream());
+			
+			//tell the master that this is a chunkserver
+			WriteOutput.writeObject("chunkserver");
+			WriteOutput.flush();
+			
+			//tell the master this Chunkserver's IP address
+			String IPAddress = InetAddress.getLocalHost().getHostAddress();
+			WriteOutput.writeObject(IPAddress);
+			WriteOutput.flush();
+			//tell the master the Chunkserver's port that it is listening on
+			WriteOutput.writeObject(portNum);
+			WriteOutput.flush();
+			
+			//upon connection, the master will ask for the chunks this CS has
+			String requestForChunks = (String) ReadInput.readObject();
+			File dir = new File(filePath);
+			File[] fs = dir.listFiles(); 
+			if (fs.length == 0)//if there are no chunks in this CS
+			{
+				WriteOutput.writeObject("no chunks");
+				WriteOutput.flush();
+			}
+			else {
+				WriteOutput.writeObject("chunks coming");//if there are chunks just send nothing
+				WriteOutput.flush();
+			}
+			//Create an array of the filenames and send it to master
+			String[] chunkHandles = new String[fs.length];
+			for (int i = 0; i< chunkHandles.length; i++)
+			{
+				String handle = fs[i].getPath();
+				//System.out.println(handle);
+				chunkHandles[i] = handle;
+			}
+			//send the array to master
+			WriteOutput.writeObject(chunkHandles);
+			WriteOutput.flush();
+					
+		} catch (FileNotFoundException e) {
+			System.out.println("FNFE while CS connecting to master");
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("IOE while CS connecting to master");
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 	public void setUpConfigFile(ServerSocket ss){
 		try{
 			FileWriter fw = new FileWriter(CSConfigFile);
 			BufferedWriter bw = new BufferedWriter(fw);
 	
 			String masterIP = InetAddress.getLocalHost().getHostAddress();
-			int portNum = ss.getLocalPort();
-			System.out.println("pornNum: " + portNum);
+
+			this.portNum = ss.getLocalPort();
+			
 			bw.write(masterIP+":"+portNum+System.getProperty("line.separator"));
 			bw.flush();
 			
@@ -428,8 +487,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			raf.seek(offset);
 			raf.read(intBuf, 0, 4);
 			int size = ChunkServer.convertBytesToInt(intBuf);
-			raf.seek(offset + 4);
-			payload = readChunk(ChunkHandle, 0, size);
+			payload = readChunk(ChunkHandle, offset + 4, size);
 			raf.close();
 			return payload;
 		}

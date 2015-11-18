@@ -61,32 +61,31 @@ public class ClientRec {
 	 * Example usage: AppendRecord(FH1, obama, RecID1)
 	 */
 	public FSReturnVals AppendRecord(FileHandle ofh, byte[] payload, RID RecordID) {
-		System.out.println("In ClientRec.AppendRecord");
 		if(ofh == null) {
+			System.out.println("ofh null in AppendRecord");
 			return FSReturnVals.BadHandle;
 		}
 		if(RecordID.ChunkHandle != null) {
+			System.out.println("rid.chuknhandle null in AppendRecord");
 			return FSReturnVals.BadRecID;
+		}
+		if(RecordID.index < 0)
+		{
+			System.out.println("index < 1 in AppendRecord");
 		}
 		Vector<String> ChunkHandles = ofh.getChunkHandles();
 		byte[] CHinBytes;
 		Location primaryLoc = ofh.getPrimaryLocation();
-		System.out.println("primaryloc.port" + primaryLoc.port);
 		int count = 0;
 		int size;
 		try {
-			//System.out.println("InCLientRec");
 			Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
-			//System.out.println("Opened up socket");
 			ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
-			//System.out.println("Opened up socket and streams1");
 			WriteOutputCS.flush();
 			ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
-			//System.out.println("Opened up socket and streams2");
 			String ChunkHandle;
 			if(ChunkHandles.isEmpty())
 			{
-				System.out.println("CLient rec is attempting to createChunk");
 				WriteOutputCS.writeInt(ChunkServer.CreateChunkCMD);
 				WriteOutputCS.flush();
 				size = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
@@ -103,11 +102,9 @@ public class ClientRec {
 			{
 				CHinBytes = ChunkHandle.getBytes();
 				WriteOutputCS.writeInt(ChunkServer.WriteChunkCMD); //Code
-				System.out.println("payload.length" + payload);
 				WriteOutputCS.writeInt(payload.length);
 				WriteOutputCS.write(payload);
 				WriteOutputCS.writeInt(CHinBytes.length);
-				System.out.println("CHinBytes.length" + CHinBytes.length);
 				WriteOutputCS.write(CHinBytes); //ChunkHandle
 				WriteOutputCS.flush();
 				
@@ -227,6 +224,7 @@ public class ClientRec {
 	public FSReturnVals ReadFirstRecord(FileHandle ofh, TinyRec tRec) {
 		
 		if(ofh.ChunkHandles.size() == 0) {
+			System.out.println("ofh null in ReadFirstRecord");
 			return FSReturnVals.BadHandle;
 		}
 		
@@ -267,7 +265,6 @@ public class ClientRec {
 					ReadInputCS.close();
 					WriteOutputCS.close();
 					CSConnection.close();
-					System.out.println("Success reading first record");
 					return FSReturnVals.Success;
 				}
 			}
@@ -361,9 +358,15 @@ public class ClientRec {
 	 */
 	public FSReturnVals ReadNextRecord(FileHandle ofh, RID pivot, TinyRec tRec) {
 		if(ofh.ChunkHandles.size() == 0) {
+			System.out.println("ofh null in RextNextRecord");
 			return FSReturnVals.BadHandle;
 		}
+		if(pivot.ChunkHandle == null)
+		{
+			System.out.println("pivot.chunkhandle null in ReadNextRecord");
+		}
 		if(pivot.index < 0) {
+			System.out.println("pivot.index < 0 in ReadNextRecord");
 			return FSReturnVals.RecDoesNotExist;
 		}
 		
@@ -414,7 +417,6 @@ public class ClientRec {
 					return FSReturnVals.Success;
 				}
 			}
-			System.out.println("Record didn't exist");
 			WriteOutputCS.writeInt(ClientInstance.CloseSockets);
 			WriteOutputCS.flush();
 			ReadInputCS.close();
@@ -497,7 +499,6 @@ public class ClientRec {
 					CSConnection.close();
 					return FSReturnVals.Success;
 				}		
-				System.out.println("Next chunkhandle");
 			}
 			WriteOutputCS.writeInt(ClientInstance.CloseSockets);
 			WriteOutputCS.flush();
