@@ -54,4 +54,23 @@ public class FileHandle {
 		return primaryLoc;
 	}
 	
+	// Right now it is assuming 
+	public Location getNextLocation(String chunk) {
+		Vector<Location> locations = chunksToLocations.get(chunk);
+		int curIndex = -1;
+		
+		for(int i = 0; i < locations.size(); i++) {
+			if(primaryLoc.equals(locations.get(i))) {
+				curIndex = i+1;
+				break;
+			}
+		}
+		
+		if(curIndex >= locations.size()) {
+			return null;
+		}
+		primaryLoc = locations.get(curIndex);
+		return primaryLoc;
+	}
+	
 }
