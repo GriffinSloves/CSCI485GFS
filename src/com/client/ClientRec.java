@@ -61,7 +61,7 @@ public class ClientRec {
 	 * Example usage: AppendRecord(FH1, obama, RecID1)
 	 */
 	public FSReturnVals AppendRecord(FileHandle ofh, byte[] payload, RID RecordID) {
-		
+		System.out.println("In ClientRec.AppendRecord");
 		if(ofh == null) {
 			return FSReturnVals.BadHandle;
 		}
@@ -71,6 +71,7 @@ public class ClientRec {
 		Vector<String> ChunkHandles = ofh.getChunkHandles();
 		byte[] CHinBytes;
 		Location primaryLoc = ofh.getPrimaryLocation();
+		System.out.println("primaryloc.port" + primaryLoc.port);
 		int count = 0;
 		int size;
 		try {
@@ -102,9 +103,11 @@ public class ClientRec {
 			{
 				CHinBytes = ChunkHandle.getBytes();
 				WriteOutputCS.writeInt(ChunkServer.WriteChunkCMD); //Code
+				System.out.println("payload.length" + payload);
 				WriteOutputCS.writeInt(payload.length);
 				WriteOutputCS.write(payload);
 				WriteOutputCS.writeInt(CHinBytes.length);
+				System.out.println("CHinBytes.length" + CHinBytes.length);
 				WriteOutputCS.write(CHinBytes); //ChunkHandle
 				WriteOutputCS.flush();
 				

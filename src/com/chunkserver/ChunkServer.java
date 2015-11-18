@@ -96,7 +96,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		try
 		{
 			
-			ss = new ServerSocket(0);
+			ss = new ServerSocket(8000);
 			setUpConfigFile(ss);
 			if(ss == null)
 			{
@@ -137,10 +137,10 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		try{
 			FileWriter fw = new FileWriter(CSConfigFile);
 			BufferedWriter bw = new BufferedWriter(fw);
-			
+	
 			String masterIP = InetAddress.getLocalHost().getHostAddress();
 			int portNum = ss.getLocalPort();
-			
+			System.out.println("pornNum: " + portNum);
 			bw.write(masterIP+":"+portNum+System.getProperty("line.separator"));
 			bw.flush();
 			
@@ -275,7 +275,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			if(!file.exists())
 			{
 				raf = new RandomAccessFile(filePath + ChunkHandle, "rw");
-				raf.setLength(4096);
+				raf.setLength(ChunkSize);
 				//Write Header
 				//0-3, num records
 				//4-7, Start of next record
@@ -286,7 +286,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 				intBuf = ChunkServer.convertIntToBytes(12);
 				raf.seek(4);
 				raf.write(intBuf, 0, intBuf.length);
-				intBuf = ChunkServer.convertIntToBytes(4096);
+				intBuf = ChunkServer.convertIntToBytes(ChunkSize);
 				raf.seek(8);
 				raf.write(intBuf, 0, intBuf.length);
 				
@@ -354,7 +354,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			raf.seek(8);
 			raf.read(intBuf, 0, 4);
 			int endSpace = ChunkServer.convertBytesToInt(intBuf);
-			int offset = 4096 - (index + 1) * 4;
+			int offset = ChunkSize - (index + 1) * 4;
 			if(endSpace > offset)
 			{
 				raf.close();
@@ -391,7 +391,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			int endSpace = ChunkServer.convertBytesToInt(intBuf);
 			while(!foundRecord)
 			{
-				indexOffset = 4096 - ((index + 1) * 4);
+				indexOffset = ChunkSize - ((index + 1) * 4);
 				//Error checking, making sure we're always checking a valid record
 				if(endSpace > indexOffset)
 				{
@@ -449,7 +449,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			raf.seek(8);
 			raf.read(intBuf, 0, 4);
 			int endSpace = ChunkServer.convertBytesToInt(intBuf);
-			int index = (4096 - endSpace - 4) / 4;
+			int index = (ChunkSize - endSpace - 4) / 4;
 			raf.close();
 			return index;
 			
