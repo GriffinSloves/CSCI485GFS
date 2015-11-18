@@ -577,7 +577,7 @@ public class TFSMaster{
 				
 				//get the IP address of connected client/chunkserver
 				this.connectedIP = (String) ois.readObject();
-				this.connectedPort = Integer.parseInt((String) ois.readObject());
+				this.connectedPort = ois.readInt();
 				
 				
 			} catch (IOException e) {

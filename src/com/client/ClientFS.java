@@ -60,6 +60,8 @@ public class ClientFS {
 			
 			WriteOutput = new ObjectOutputStream(ClientSocket.getOutputStream());
 			ReadInput = new ObjectInputStream(ClientSocket.getInputStream());
+			WriteOutput.writeObject("clientFS");
+			WriteOutput.flush();
 			
 		}catch (FileNotFoundException e) {
 			System.out.println("Error (Client), the config file "+ TFSMaster.MasterConfigFile +" containing the port of the ChunkServer is missing.");
