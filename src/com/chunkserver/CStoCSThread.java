@@ -25,17 +25,17 @@ public class CStoCSThread extends Thread
 		private ObjectOutputStream WriteOutput;
 		private ObjectInputStream ReadInput;
 		
-		public CStoCSThread(ChunkServer cs, Socket s)
+		public CStoCSThread(ChunkServer cs, Socket s, ObjectInputStream ois, ObjectOutputStream oos)
 		{
 			this.cs = cs;
 			this.CSConnection = s;
+			this.ReadInput = ois;
+			this.WriteOutput = oos;
 		}
 		
 		public void run()
 		{
 			try {
-				ReadInput = new ObjectInputStream(CSConnection.getInputStream());
-				WriteOutput = new ObjectOutputStream(CSConnection.getOutputStream());
 				int offset;
 				int payloadlength;
 				int chunkhandlesize;

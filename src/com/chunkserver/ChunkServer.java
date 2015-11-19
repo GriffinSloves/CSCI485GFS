@@ -110,18 +110,6 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			System.out.println("Error (ChunkServer):  Failed to close either a valid connection or its input/output stream.");
 			ex.printStackTrace();
 		}
-		finally {
-			try {
-				if (MasterConnection != null)
-					MasterConnection.close();
-				if (ReadInput != null)
-					ReadInput.close();
-				if (WriteOutput != null) WriteOutput.close();
-			} catch (IOException fex){
-				System.out.println("Error (ChunkServer):  Failed to close either a valid connection or its input/output stream.");
-				fex.printStackTrace();
-			}
-		}
 		
 		//Write to Master all of the chunkhandles being stored on this chunkserver
 		//Every second, check which leases are expiring and renew the necessary ones
@@ -142,6 +130,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			
 			this.MasterConnection = new Socket(MasterIPAddress,MasterPort);
 			this.WriteOutput = new ObjectOutputStream(MasterConnection.getOutputStream());
+			WriteOutput.flush();
 			this.ReadInput = new ObjectInputStream(MasterConnection.getInputStream());
 			
 			//tell the master that this is a chunkserver
@@ -270,18 +259,18 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 					System.out.println("ss is null");
 				}
 				Socket s = ss.accept(); //Blocking
-				//System.out.println("ChunkServer accepted socket");
 				ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+				ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
 				int code = ois.readInt();
+				System.out.println("code: " + code);
 				if(code == 100)
 				{
-					//ois.close();
-					ClientInstance ci = new ClientInstance(this, s);
+					ClientInstance ci = new ClientInstance(this, s, ois, oos);
 					ci.start();
 				}
 				else if(code == 200)
 				{
-					CStoCSThread cst = new CStoCSThread(this, s);
+					CStoCSThread cst = new CStoCSThread(this, s, ois, oos);
 					cst.start();
 				}
 				

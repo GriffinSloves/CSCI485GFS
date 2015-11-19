@@ -37,17 +37,17 @@ public class ClientInstance extends Thread
 	private ObjectOutputStream WriteOutput;
 	private ObjectInputStream ReadInput;
 	
-	public ClientInstance(ChunkServer cs, Socket s)
+	public ClientInstance(ChunkServer cs, Socket s, ObjectInputStream ois, ObjectOutputStream oos)
 	{
 		this.cs = cs;
 		this.ClientConnection = s;
+		this.ReadInput = ois;
+		this.WriteOutput = oos;
 	}
 	
 	public void run()
 	{
 		try {
-			ReadInput = new ObjectInputStream(ClientConnection.getInputStream());
-			WriteOutput = new ObjectOutputStream(ClientConnection.getOutputStream());
 			int offset;
 			int payloadlength;
 			int chunkhandlesize;
@@ -71,6 +71,7 @@ public class ClientInstance extends Thread
 					{
 						currLoc = (Location)ReadInput.readObject();
 						Locations = (Vector<Location>)ReadInput.readObject();
+						System.out.println("ClientInstance.CreateChunkCMD. Locations.size: " + Locations.size());
 						for(int i = 0; i < Locations.size(); i++)
 						{
 							Location nextLoc = Locations.elementAt(i);
