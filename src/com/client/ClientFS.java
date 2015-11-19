@@ -371,8 +371,8 @@ public class ClientFS {
 			ofh.setHandles(chunksOfFile);
 			HashMap<String, Vector<Location>> locationsOfChunks = (HashMap<String, Vector<Location>>) ReadInput.readObject();
 			ofh.setLocations(locationsOfChunks);
-			Location TestLocation = new Location("127.0.0.1", 8000);
-			ofh.setPrimaryLocation(TestLocation);
+			/*Location TestLocation = new Location("127.0.0.1", 8000);
+			ofh.setPrimaryLocation(TestLocation);*/
 			
 		} catch (IOException e) {
 			e.printStackTrace();
