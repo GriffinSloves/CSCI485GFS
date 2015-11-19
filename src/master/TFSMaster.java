@@ -1075,6 +1075,7 @@ public class TFSMaster{
 				while (it.hasNext())
 				{
 					HashMap.Entry pair = (HashMap.Entry)it.next();
+					System.out.println(pair.getKey() + ":");
 					if (!chunkHandlesToServers.containsKey(pair.getKey())){
 						chunkHandlesToServers.put((String)pair.getKey(), (Vector<Location>)pair.getValue());
 					}

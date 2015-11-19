@@ -350,7 +350,7 @@ public class ClientRec {
 					ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 					WriteOutputCS.flush();
 					ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
-
+					WriteOutputCS.writeInt(100);
 					//WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
 					WriteOutputCS.writeInt(ClientInstance.ReadLastRecord);
 					WriteOutputCS.writeInt(CHinBytes.length);
@@ -440,7 +440,7 @@ public class ClientRec {
 					Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 					ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 					ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
-				
+					WriteOutputCS.writeInt(100);
 					if(j != indexOfChunkHandle)
 					{
 						index = 0;
@@ -538,7 +538,7 @@ public class ClientRec {
 					ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 					WriteOutputCS.flush();
 					ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
-					
+					WriteOutputCS.writeInt(100);
 					if(j != indexOfChunkHandle)
 					{
 						index = -1;
