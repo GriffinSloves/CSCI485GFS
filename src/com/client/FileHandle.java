@@ -12,6 +12,7 @@ public class FileHandle {
 	Vector<String> ChunkHandles; //array of all chunk handles that constitute the file
 	HashMap<String, Vector<Location>> ChunkLocations;
 	boolean newChunk = true;
+
 	
 	public FileHandle(){}
 	
