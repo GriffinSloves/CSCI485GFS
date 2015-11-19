@@ -17,6 +17,7 @@ import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +27,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
+import java.util.Vector;
 
 import com.chunkserver.ClientInstance;
 import com.client.Client;
@@ -154,6 +156,21 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			WriteOutput.writeObject(portNum);
 			WriteOutput.flush();
 			
+			sendChunkInfoToMaster();
+					
+		} catch (FileNotFoundException e) {
+			System.out.println("FNFE while CS connecting to master");
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.out.println("IOE while CS connecting to master");
+			e.printStackTrace();
+		}
+	}
+	
+	public void sendChunkInfoToMaster()
+	{
+		try
+		{
 			//upon connection, the master will ask for the chunks this CS has
 			String requestForChunks = (String) ReadInput.readObject();
 			File dir = new File(filePath);
@@ -178,16 +195,19 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			//send the array to master
 			WriteOutput.writeObject(chunkHandles);
 			WriteOutput.flush();
-					
-		} catch (FileNotFoundException e) {
-			System.out.println("FNFE while CS connecting to master");
-			e.printStackTrace();
-		} catch (IOException e) {
-			System.out.println("IOE while CS connecting to master");
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			
+			//get a list of deleted chunks and process the deletes
+			Vector<String> deletedChunks = (Vector<String>) ReadInput.readObject();
+			deleteFiles(deletedChunks);
+			
+		}
+		catch (IOException ioe){
+			System.out.println("IOException in sendChunkInfoToMaster");
+			ioe.printStackTrace();
+		}
+		catch (ClassNotFoundException cnfe){
+			System.out.println("CNFException in sendChunkInfoToMaster");
+			cnfe.printStackTrace();
 		}
 	}
 	
@@ -211,7 +231,6 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			ioe.printStackTrace();
 		}
 	}
-	
 	
 	public void processMasterConfig()
 	{
@@ -517,8 +536,6 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		}
 	}
 	
-
-	
 /*	public synchronized void ObtainLease(String ChunkHandle)
 	{
 		//Ask master to obtain lease on ChunkHandle
@@ -602,54 +619,17 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		
 	}
 	
-	public synchronized void sendHeartbeatMessage()
+	public void deleteFiles(Vector<String> ChunkHandleList)
 	{
-		try
+		for(int i = 0; i < ChunkHandleList.size(); i++)
 		{
-			int code = 201;
-			WriteOutput.writeInt(code); 
-			//send IPAddress of CS to identify which chunks are on each CS
-			String IPAddressOfThisCS = InetAddress.getLocalHost().getHostAddress();
-			byte[] IPasByte = IPAddressOfThisCS.getBytes();
-			WriteOutput.write(IPasByte);
-			WriteOutput.flush();
-			//send chunk list
-			String[] chunksOnThisCS = ChunkServer.listChunks();
-			WriteOutput.writeObject(chunksOnThisCS);
-			WriteOutput.flush();
-			
-			String [] ChunkHandleList = (String [])ReadInput.readObject();
-			deleteFiles(ChunkHandleList);
-		}
-		catch(IOException ex)
-		{
-			System.out.println("Error (ChunkServer):  Failed to close either a valid connection or its input/output stream.");
-		}
-		catch(ClassNotFoundException cnfe)
-		{
-			System.out.println("cnfe in ChunkServer.sendHeartbeatMessage(): " + cnfe.getMessage());
-		}
-		finally {
-			try {
-				if (MasterConnection != null)
-					MasterConnection.close();
-				if (ReadInput != null)
-					ReadInput.close();
-				if (WriteOutput != null) WriteOutput.close();
-			} catch (IOException fex){
-				System.out.println("Error (ChunkServer):  Failed to close either a valid connection or its input/output stream.");
-				fex.printStackTrace();
-			}
-		}
-		
-	}
-	
-	public void deleteFiles(String [] ChunkHandleList)
-	{
-		for(int i = 0; i < ChunkHandleList.length; i++)
-		{
-			File file = new File(filePath + ChunkHandleList[i]);
+			File file = new File(filePath + ChunkHandleList.elementAt(i));
 			file.delete();
+			try {
+				System.out.println("CS at: "+InetAddress.getLocalHost().getHostAddress() + "deleted "+ChunkHandleList.elementAt(i));
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
@@ -707,21 +687,26 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		return PayloadSize;
 	}
 	
-	public class MasterThread extends Thread
+	public class CSToMasterConnection extends Thread
 	{
 		
 		private ChunkServer cs;
 		private Socket MasterConnection;
 		private ObjectOutputStream WriteOutput;
 		private ObjectInputStream ReadInput;
-		public MasterThread(ChunkServer cs)
+		public CSToMasterConnection(ChunkServer cs)
 		{
 			this.cs = cs;
+			cs.ReadInput = this.ReadInput;
+			cs.WriteOutput=this.WriteOutput;
 		}
 		
 		public void run()
 		{
-			
+			while (true)
+			{
+				sendChunkInfoToMaster();
+			}
 		}
 	}
 	
@@ -754,7 +739,6 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 				        	cs.RenewLease(lease);
 				        }
 				    }
-				    cs.sendHeartbeatMessage();
 					Thread.sleep(1000);
 				}
 				catch(InterruptedException ie)
