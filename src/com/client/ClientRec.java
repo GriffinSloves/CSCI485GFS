@@ -263,7 +263,7 @@ public class ClientRec {
 			ChunkHandle = ChunkHandles.elementAt(j);
 			Vector<Location> Locations = ChunksToLocations.get(ChunkHandle);
 			CHinBytes = ChunkHandle.getBytes();
-			System.out.println(Locations == null);
+			readFailed = false;
 			for(int i = 0; i < Locations.size() && !readFailed; i++) {
 				try {
 					Location primaryLoc = Locations.get(i);
@@ -342,7 +342,7 @@ public class ClientRec {
 			ChunkHandle = ChunkHandles.elementAt(j);
 			Locations = ChunksToLocations.get(ChunkHandle);
 			CHinBytes = ChunkHandle.getBytes();
-			
+			readFailed = false;
 			for(int i = 0; i < Locations.size() && !readFailed; i++) {
 				try {
 					Location primaryLoc = Locations.get(i);
@@ -430,6 +430,7 @@ public class ClientRec {
 		boolean readFailed = false;
 		for(int j = indexOfChunkHandle; j < ChunkHandles.size(); j++) {
 			//WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
+			readFailed = false;
 			ChunkHandle = ChunkHandles.get(j);
 			Locations = ChunksToLocations.get(ChunkHandle);
 			CHinBytes = ChunkHandle.getBytes();
@@ -490,6 +491,7 @@ public class ClientRec {
 				}
 				
 			}
+			System.out.println("Moving to next chunk");
 		}
 		return FSReturnVals.Fail;
 		
@@ -530,6 +532,7 @@ public class ClientRec {
 			ChunkHandle = ChunkHandles.get(j);
 			Locations = ChunksToLocations.get(ChunkHandle);
 			CHinBytes = ChunkHandle.getBytes();
+			readFailed = false;
 			for(int i = 0; i < Locations.size() && !readFailed; i++) {
 				try {
 					Location primaryLoc = Locations.get(i);
