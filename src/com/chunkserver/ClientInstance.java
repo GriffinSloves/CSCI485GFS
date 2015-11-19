@@ -62,7 +62,7 @@ public class ClientInstance extends Thread
 			//Use the existing input and output stream as long as the client is connected
 			while (!ClientConnection.isClosed() && CMD != CloseSockets) {
 				CMD = ChunkServer.ReadIntFromInputStream("ClientInstance0", ReadInput);
-				
+				System.out.println("CMD: " + CMD);
 				switch (CMD){
 				case CreateChunkCMD:
 					ChunkHandle = cs.createChunk();
@@ -76,12 +76,16 @@ public class ClientInstance extends Thread
 							Location nextLoc = Locations.elementAt(i);
 							if(!nextLoc.equals(currLoc))
 							{
+								System.out.println("IP: " + nextLoc.IPAddress);
+								System.out.println("Port: " + nextLoc.port);
 								Socket CSConnection = new Socket(nextLoc.IPAddress, nextLoc.port);
 								ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 								WriteOutputCS.flush();
 								ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 								WriteOutputCS.writeInt(200);
 								WriteOutputCS.writeInt(CStoCSThread.CreateChunkCMD);
+								WriteOutputCS.writeInt(CHinBytes.length);
+								WriteOutputCS.write(CHinBytes);
 								WriteOutputCS.flush();
 								success = ReadInputCS.readInt();
 							
@@ -175,7 +179,7 @@ public class ClientInstance extends Thread
 								
 								WriteOutputCS.writeInt(recordIndex);
 								WriteOutputCS.flush();
-								WriteOutputCS.write(chunkhandlesize);
+								WriteOutputCS.writeInt(chunkhandlesize);
 								WriteOutputCS.flush();
 								WriteOutputCS.write(CHinBytes);
 								WriteOutputCS.flush();

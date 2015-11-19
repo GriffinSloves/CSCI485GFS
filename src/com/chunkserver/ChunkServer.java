@@ -217,7 +217,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 				//System.out.println(InetAddress.getLocalHost().getHostAddress());
 				//System.out.println(ss.getLocalPort());
 				Socket s = ss.accept(); //Blocking
-				//System.out.println("Accepted client");
+				System.out.println("Accepted client");
 				ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
 				//reverse these two
 				ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
@@ -266,7 +266,11 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		counter++;
 		return String.valueOf(counter);
 	}
-	
+
+	public void setCounter(int counter)
+	{
+		this.counter = counter;
+	}
 	/**
 	 * Write the byte array to the chunk at the offset
 	 * The byte array size should be no greater than 4KB

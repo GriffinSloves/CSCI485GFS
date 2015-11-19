@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+import com.client.Client;
 import com.client.RID;
 
 public class CStoCSThread extends Thread
@@ -44,14 +45,20 @@ public class CStoCSThread extends Thread
 				RID rid;
 				String ChunkHandle;
 				int CMD = 0;
+				int size;
+				int counter;
 				//Use the existing input and output stream as long as the client is connected
 				while (!CSConnection.isClosed()) {
-					CMD = ChunkServer.ReadIntFromInputStream("ClientInstance0", ReadInput);
-					
+					CMD = ChunkServer.ReadIntFromInputStream("CStoCS0", ReadInput);
+					System.out.println("CS CMD: " + CMD);
 					switch (CMD){
 					case CreateChunkCMD:
 						String chunkhandle = cs.createChunk();
 						byte[] CHinbytes = chunkhandle.getBytes();
+						size = ChunkServer.ReadIntFromInputStream("CStoCS", ReadInput);
+						CHinBytes = ChunkServer.RecvPayload("CStoCS", ReadInput, size);
+						counter = Integer.parseInt(new String(CHinBytes));
+						cs.setCounter(counter);
 						WriteOutput.writeInt(1);
 						WriteOutput.flush();
 						break;
