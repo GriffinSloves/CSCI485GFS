@@ -110,7 +110,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			System.out.println("Error (ChunkServer):  Failed to close either a valid connection or its input/output stream.");
 			ex.printStackTrace();
 		}
-	/*	finally {
+		finally {
 			try {
 				if (MasterConnection != null)
 					MasterConnection.close();
@@ -122,7 +122,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 				fex.printStackTrace();
 			}
 		}
-		*/
+		
 		//Write to Master all of the chunkhandles being stored on this chunkserver
 		//Every second, check which leases are expiring and renew the necessary ones
 		//RenewLeaseThread rlt = new RenewLeaseThread(this);
