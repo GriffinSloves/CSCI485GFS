@@ -81,7 +81,7 @@ public class ClientInstance extends Thread
 								WriteOutputCS.flush();
 								ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 								WriteOutputCS.writeInt(200);
-								WriteOutputCS.writeInt(ChunkServer.CreateChunkCMD);
+								WriteOutputCS.writeInt(CStoCSThread.CreateChunkCMD);
 								WriteOutputCS.flush();
 								success = ReadInputCS.readInt();
 							
@@ -108,16 +108,87 @@ public class ClientInstance extends Thread
 						System.out.println("Error in ChunkServer.java, WritehChunkCMD has wrong size.");
 					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
 					ChunkHandle = (new String(CHinBytes)).toString();
-			
+					
+					
+					try {
+						currLoc = (Location)ReadInput.readObject();
+						Vector<Location> locations = (Vector<Location>) ReadInput.readObject();
+						
+						for(int i = 0; i < locations.size(); i++)
+						{
+							Location nextLoc = locations.elementAt(i);
+							if(!nextLoc.equals(currLoc))
+							{
+								Socket CSConnection = new Socket(nextLoc.IPAddress, nextLoc.port);
+								ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
+								WriteOutputCS.flush();
+								ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
+								WriteOutputCS.writeInt(200);
+								WriteOutputCS.writeInt(CStoCSThread.WriteChunkCMD);
+								WriteOutputCS.flush();
+								
+								WriteOutputCS.writeInt(payloadlength);
+								WriteOutputCS.flush();
+								WriteOutputCS.write(payload);
+								WriteOutputCS.flush();
+								WriteOutputCS.writeInt(chunkhandlesize);
+								WriteOutputCS.flush();
+								WriteOutputCS.write(CHinBytes);
+								WriteOutputCS.flush();
+								
+								success = ReadInputCS.readInt();
+							}
+							
+						}
+						
+					} catch (ClassNotFoundException e) {
+						e.printStackTrace();
+					}
+					
 					//Call the writeChunk command
 					WriteOutput.writeInt(cs.append(ChunkHandle, payload));
 					WriteOutput.flush();
 					break;
+					
 				case DeleteRecord:
 					int recordIndex = ChunkServer.ReadIntFromInputStream("ClientInstance4", ReadInput);		
 					chunkhandlesize = ChunkServer.ReadIntFromInputStream("ClientInstance4", ReadInput);
 					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
 					ChunkHandle = (new String(CHinBytes)).toString();					
+					
+					try {
+						currLoc = (Location)ReadInput.readObject();
+						Vector<Location> locations = (Vector<Location>) ReadInput.readObject();
+						
+						for(int i = 0; i < locations.size(); i++)
+						{
+							Location nextLoc = locations.elementAt(i);
+							if(!nextLoc.equals(currLoc))
+							{
+								Socket CSConnection = new Socket(nextLoc.IPAddress, nextLoc.port);
+								ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
+								WriteOutputCS.flush();
+								ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
+								WriteOutputCS.writeInt(200);
+								WriteOutputCS.writeInt(CStoCSThread.DeleteRecord);
+								WriteOutputCS.flush();
+								
+								WriteOutputCS.writeInt(recordIndex);
+								WriteOutputCS.flush();
+								WriteOutputCS.write(chunkhandlesize);
+								WriteOutputCS.flush();
+								WriteOutputCS.write(CHinBytes);
+								WriteOutputCS.flush();
+								
+								success = ReadInputCS.readInt();
+							}
+							
+						}
+						
+					} catch (ClassNotFoundException e) {
+						e.printStackTrace();
+					}
+					
 					if(cs.deleteRecord(ChunkHandle, recordIndex)) {
 						WriteOutput.writeInt(ChunkServer.TRUE); 
 					} else {
