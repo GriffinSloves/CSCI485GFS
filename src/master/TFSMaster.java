@@ -196,48 +196,7 @@ public class TFSMaster{
 			e.printStackTrace();
 		}	
 	  }	
-	/*public void readChunksToLocations()
-	{
-		
-		FileReader fr;
-		BufferedReader br;
-		//read the mapping of chunkHandles to their host Servers
-		//will be in the format ChunkHandle:ServerIP,Port,ServerIP2,Port2
-		try{
-			
-			fr = new FileReader(chunkHandlesToServersFile);
-			br = new BufferedReader(fr);
-			
-			while (br.readLine() != null)
-			{
-				StringTokenizer str = new StringTokenizer(br.readLine(),":");
-				//get the chunkhandle
-				String chunkHandle = str.nextToken();
-				
-				//each chunkHandle is mapped to a vector of strings representing the IP and port of the CS location
-				Vector<String> IPPortInfo = new Vector<String>();
-				
-				//the next token should be a string in this format: ServerIP,Port,Server2,Port2,...ServerIPN,PortN
-				//this time separate by comma
-				StringTokenizer str2 = new StringTokenizer(str.nextToken(),",");
-				while(str2.hasMoreTokens())
-				{
-					String IPAddressOfChunkServer = str.nextToken();
-					String portOfChunkServer = str.nextToken();
-					//add the info to the vector in this format: Server,Port
-					String toAdd = IPAddressOfChunkServer +","+portOfChunkServer;
-					
-					IPPortInfo.addElement(IPAddressOfChunkServer);//add the info to the vector to be mapped to the chunkHandle
-				}
-			}
-		}catch (FileNotFoundException e) {
-			System.out.print("FNFE while reading chunkHandlesToServers");
-			e.printStackTrace();
-		} catch (IOException e) {
-			System.out.print("IOE while reading chunkHandlesToSevers");
-			e.printStackTrace();
-		}
-	}*/
+	
 	public void readMetaData()
 	{
 		readNameSpace();
@@ -488,37 +447,6 @@ public class TFSMaster{
 		namespace.add(src+newFileName);
 		
 	}
-	
-	//Returns the handles which have been deleted
-	public Vector<String> updateChunkLocations(Location loc, String [] ChunkHandles)
-		{
-			Vector<String> deletedChunks = new Vector<String>();
-			boolean newLocation = true;
-			for(int i = 0; i < ChunkHandles.length; i++)
-			{
-				
-				Vector<Location> ServerVector = chunkHandlesToServers.get(ChunkHandles[i]);
-				for(int j = 0; j < ServerVector.size(); j++)
-				{
-					Location location = ServerVector.elementAt(j);
-					if(location.IPAddress.equals(loc.IPAddress))
-					{
-						newLocation = false;
-						break;
-					}
-				}
-				if(newLocation)
-				{
-					ServerVector.add(loc);
-				}
-				newLocation = true;
-				if(filesThatHaveBeenDeleted.contains(ChunkHandles[i]))
-				{
-					deletedChunks.add(ChunkHandles[i]);
-				}
-			}
-			return deletedChunks;
-		}
 		
 	public boolean renewLease(Location loc, String ChunkHandle)
 		{
@@ -532,9 +460,6 @@ public class TFSMaster{
 			return false;
 		}
 	
-	public static void main(String[] args){
-		TFSMaster master = new TFSMaster();
-	}
 	class ServerThread extends Thread
 	{
 		Socket s; TFSMaster master;
@@ -600,10 +525,9 @@ public class TFSMaster{
 			//if it is a chunkserver connecting to master
 			if (this.typeOfConnection == 2)
 			{
-				whatChunksYouGot();
+				sendHeartBeatMessage();
 				chunkserverRun();
 			}
-			
 		}
 		public void clientRun()
 		{
@@ -662,12 +586,26 @@ public class TFSMaster{
 					e.printStackTrace();
 			}
 		}//end client run
-		
 		public void chunkserverRun()
 		{
-			
-		}//end server run
-		public void whatChunksYouGot()
+			while (true){
+				//finds out what chunks the chunk server has, updates the namespace and metadata
+				//sends back the array of deleted chunkHandles for the CS to process
+				sendHeartBeatMessage();
+				
+				try {
+					//sleep for a minute
+					Thread.sleep(60000);
+				}
+				catch (InterruptedException ie){
+					ie.printStackTrace();
+				}
+			}
+		}
+		
+		//finds out what chunks the chunk server has, updates the namespace and metadata
+		//sends back the array of deleted chunkHandles for the CS to process
+		public void sendHeartBeatMessage()
 		{
 			try {
 				oos.writeObject("What chunks?");
@@ -690,6 +628,7 @@ public class TFSMaster{
 						Vector<Location> replicaLocations = chunkHandlesToServers.get(chunkHandles[i]);
 						Location l = new Location(this.connectedIP, connectedPort);
 						boolean add = true;
+						
 						//dont add the location if it already exists
 						for (int x = 0; x < replicaLocations.size(); x++){
 							Location compare = replicaLocations.get(x);
@@ -699,6 +638,8 @@ public class TFSMaster{
 							}
 						}
 						if (add) replicaLocations.add(l);
+						continue;//no need to add an entry if it exists
+								 //proceed to next iteration
 					}
 					
 					//if the chunkhandle didn't already exist
@@ -708,6 +649,12 @@ public class TFSMaster{
 					String handleToAdd = chunkHandles[i];
 					master.chunkHandlesToServers.put(handleToAdd,locationsOfThisChunk);
 				}
+				oos.writeObject(filesThatHaveBeenDeleted);
+				String confirmation = (String) ois.readObject();
+				if (confirmation.equals("confirmed_delete")){
+					System.out.println("Error in CS processeing deleted files");
+				}
+				filesThatHaveBeenDeleted = new Vector<String>();//reset the vector
 				
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -716,7 +663,6 @@ public class TFSMaster{
 			}
 			
 		}
-		
 		public void createDir() throws IOException, ClassNotFoundException
 		{
 			//check if the src doesn't exist
@@ -1161,7 +1107,9 @@ public class TFSMaster{
 		}
 	}
 	
-	
+	public static void main(String[] args){
+		TFSMaster master = new TFSMaster();
+	}
 
 
 
