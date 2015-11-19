@@ -21,6 +21,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -41,22 +43,22 @@ public class TFSMaster{
 	
 	public static LinkedHashSet<String> namespace; //maps directory paths to IP address of chunk servers
 	public static LinkedHashMap<String, Vector<String>> filesToChunkHandles; // maps which chunks constitute a file
-	public static HashMap<String, Vector<Location>> chunkHandlesToServers; //maps chunk handles to locations of their replicas(CS IP addresses)
+	public static LinkedHashMap<String, Vector<Location>> chunkHandlesToServers; //maps chunk handles to locations of their replicas(CS IP addresses)
 	public static HashMap<String, Lease> ChunkLeaseMap;
 	public static HashMap<Lease, String> LeaseServerMap;
-	
+	public static HashSet<Location> connectedServers;
 	
 	public static final String nameSpaceFile = "namespace.txt";
 	public static final String filesToChunkHandlesFile = "filesToChunkHandles.txt";
-	public static final String chunkHandlesToServersFile = "chunkHandlesToServers.txt";
 	public static int logSize = 0; public static int logNumber;
 	
 	public TFSMaster()
 	{
 		namespace = new LinkedHashSet<String>();
 		filesToChunkHandles = new LinkedHashMap<String, Vector<String>>();
-		chunkHandlesToServers = new HashMap<String, Vector<Location>>();
+		chunkHandlesToServers = new LinkedHashMap<String, Vector<Location>>();
 		filesThatHaveBeenDeleted = new Vector<String>();
+		connectedServers = new HashSet<Location>();
 		
 		//read all metadata from files on startup
 		readMasterLogConfig();
@@ -478,6 +480,9 @@ public class TFSMaster{
 				determineConnectionType();
 				
 				this.master = master;
+			} catch (SocketException connectionReset){
+				Location l = new Location(connectedIP, connectedPort);
+				if (connectedServers.contains(l)) connectedServers.remove(l);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -511,7 +516,7 @@ public class TFSMaster{
 			} catch (ClassNotFoundException e) {
 				System.out.println("Error in determining connection type");
 				e.printStackTrace();
-			}
+			} 
 			
 		}
 		
@@ -525,6 +530,7 @@ public class TFSMaster{
 			//if it is a chunkserver connecting to master
 			if (this.typeOfConnection == 2)
 			{
+				connectedServers.add(new Location(connectedIP, connectedPort));
 				sendHeartBeatMessage();
 				chunkserverRun();
 			}
@@ -924,7 +930,6 @@ public class TFSMaster{
 				//read which file wants to be opened
 				String filePath = (String) ois.readObject();
 				
-				
 				//use lookup table to get handles of all chunks of that file
 				Vector<String> chunksOfFile = filesToChunkHandles.get(filePath);
 				
@@ -951,12 +956,6 @@ public class TFSMaster{
 				{
 					Vector<Location> location = chunkHandlesToServers.get(chunksOfFile.elementAt(i));
 					ChunkLocations.put(chunksOfFile.elementAt(i), location);
-				}
-				
-				//if the containers are is empty, the file has just been created
-				//master should arbitrarily allocate a chunkServer to the file
-				if (chunksOfFile.size() == 0 || ChunkLocations.size() == 0){
-					
 				}
 				
 				//send that array back to ClientFS to load into FileHandle object
