@@ -653,7 +653,6 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		return chunkFiles;
 	}
 	
-	
 	public static byte[] RecvPayload(String caller, ObjectInputStream instream, int sz){
 		byte[] tmpbuf = new byte[sz];
 		byte[] InputBuff = new byte[sz];
