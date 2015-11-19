@@ -5,9 +5,12 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Vector;
 
 import com.client.Client;
 import com.client.RID;
+
+import master.Location;
 
 public class ClientInstance extends Thread
 {
@@ -53,17 +56,50 @@ public class ClientInstance extends Thread
 			RID rid;
 			String ChunkHandle;
 			int CMD = 0;
+			Location currLoc;
+			Vector<Location> Locations;
+			int success;
+			Vector<Location> failedLocs = new Vector<Location>();
 			//Use the existing input and output stream as long as the client is connected
 			while (!ClientConnection.isClosed() && CMD != CloseSockets) {
 				CMD = ChunkServer.ReadIntFromInputStream("ClientInstance0", ReadInput);
 				
 				switch (CMD){
 				case CreateChunkCMD:
-					String chunkhandle = cs.createChunk();
-					byte[] CHinbytes = chunkhandle.getBytes();
-					WriteOutput.writeInt(CHinbytes.length);
-					WriteOutput.write(CHinbytes);
-					WriteOutput.flush();
+					ChunkHandle = cs.createChunk();
+					CHinBytes = ChunkHandle.getBytes();
+					try
+					{
+						currLoc = (Location)ReadInput.readObject();
+						Locations = (Vector<Location>)ReadInput.readObject();
+						for(int i = 0; i < Locations.size(); i++)
+						{
+							Location nextLoc = Locations.elementAt(i);
+							if(!nextLoc.equals(currLoc))
+							{
+								Socket CSConnection = new Socket(nextLoc.IPAddress, nextLoc.port);
+								ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
+								WriteOutputCS.flush();
+								ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
+								WriteOutputCS.writeInt(ChunkServer.CreateChunkCMD);
+								WriteOutputCS.flush();
+								success = ReadInputCS.readInt();
+								if(success != 1)
+								{
+									failedLocs.addElement(nextLoc);
+								}
+							}
+							
+						}
+						WriteOutput.writeInt(CHinBytes.length);
+						WriteOutput.write(CHinBytes);
+						WriteOutput.flush();
+					}
+					catch(ClassNotFoundException cnfe)
+					{
+						cnfe.printStackTrace();
+						WriteOutput.writeInt(-1);
+					}
 					break;
 
 				case WriteChunkCMD:

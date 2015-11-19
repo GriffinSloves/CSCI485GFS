@@ -52,8 +52,7 @@ public class CStoCSThread extends Thread
 					case CreateChunkCMD:
 						String chunkhandle = cs.createChunk();
 						byte[] CHinbytes = chunkhandle.getBytes();
-						WriteOutput.writeInt(CHinbytes.length);
-						WriteOutput.write(CHinbytes);
+						WriteOutput.writeInt(1);
 						WriteOutput.flush();
 						break;
 
@@ -68,19 +67,17 @@ public class CStoCSThread extends Thread
 						ChunkHandle = (new String(CHinBytes)).toString();
 				
 						//Call the writeChunk command
-						WriteOutput.writeInt(cs.append(ChunkHandle, payload));
+						cs.append(ChunkHandle, payload);
+						WriteOutput.writeInt(1);
 						WriteOutput.flush();
 						break;
 					case DeleteRecord:
 						int recordIndex = ChunkServer.ReadIntFromInputStream("ClientInstance4", ReadInput);		
 						chunkhandlesize = ChunkServer.ReadIntFromInputStream("ClientInstance4", ReadInput);
 						CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
-						ChunkHandle = (new String(CHinBytes)).toString();					
-						if(cs.deleteRecord(ChunkHandle, recordIndex)) {
-							WriteOutput.writeInt(ChunkServer.TRUE); 
-						} else {
-							WriteOutput.writeInt(ChunkServer.FALSE);
-						}
+						ChunkHandle = (new String(CHinBytes)).toString();	
+						cs.deleteRecord(ChunkHandle, recordIndex);
+						WriteOutput.writeInt(1);
 						
 						WriteOutput.flush();
 						break;

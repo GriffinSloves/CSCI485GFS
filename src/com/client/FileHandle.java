@@ -10,7 +10,7 @@ public class FileHandle {
 	
 	String filePath;
 	Vector<String> ChunkHandles; //array of all chunk handles that constitute the file
-	Vector<Location> Locations;
+	HashMap<String, Vector<Location>> ChunkLocations;
 	
 	public FileHandle(){}
 	
@@ -33,14 +33,14 @@ public class FileHandle {
 		return ChunkHandles;
 	}
 	
-	public void setLocations(Vector<Location> locationsOfChunks)
+	public void setLocations(HashMap<String, Vector<Location>> locationsOfChunks)
 	{
-		this.Locations = locationsOfChunks;
+		this.ChunkLocations = locationsOfChunks;
 	}
 	
-	public Vector<Location> getLocations()
+	public HashMap<String, Vector<Location>> getLocations()
 	{
-		return Locations;
+		return ChunkLocations;
 	}
 	
 

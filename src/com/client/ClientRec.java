@@ -75,26 +75,25 @@ public class ClientRec {
 		}
 		Vector<String> ChunkHandles = ofh.getChunkHandles();
 		byte[] CHinBytes;
-		Location primaryLoc = ofh.getPrimaryLocation();
+		Vector<Location> Locations = ofh.getLocations();
 		int count = 0;
 		int size;
 		String ChunkHandle = "";
-		while(primaryLoc != null) {
+		for(int i = 0; i < Locations.size(); i++) {
 			try {
-				//System.out.println("InCLientRec");
+				Location primaryLoc = Locations.get(i);
 				System.out.println("primaryLoc: " + primaryLoc.IPAddress + " - " + primaryLoc.port);
 				Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
-				//System.out.println("Opened up socket");
 				ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
-				//System.out.println("Opened up socket and streams1");
 				WriteOutputCS.flush();
 				ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
-				//System.out.println("Opened up socket and streams2");
 				
 				if(ChunkHandles.isEmpty())
 				{
 					System.out.println("Client rec is attempting to createChunk");
 					WriteOutputCS.writeInt(ChunkServer.CreateChunkCMD);
+					WriteOutputCS.flush();
+					WriteOutputCS.writeObject(Locations);
 					WriteOutputCS.flush();
 					size = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
 					CHinBytes = Client.RecvPayload("ClientRec", ReadInputCS, size);
@@ -116,11 +115,14 @@ public class ClientRec {
 					WriteOutputCS.writeInt(CHinBytes.length);
 					WriteOutputCS.write(CHinBytes); //ChunkHandle
 					WriteOutputCS.flush();
-					
+					WriteOutputCS.writeObject(Locations);
+					WriteOutputCS.flush();
 					int index = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
 					if(index == -1 && count == 0)
 					{
 						WriteOutputCS.writeInt(ChunkServer.CreateChunkCMD);
+						WriteOutputCS.flush();
+						WriteOutputCS.writeObject(Locations);
 						WriteOutputCS.flush();
 						size = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
 						CHinBytes = Client.RecvPayload("ClientRec", ReadInputCS, size);
@@ -163,8 +165,6 @@ public class ClientRec {
 				// restart process
 				e.printStackTrace();
 				System.out.println("Moving to next ChunkServer: Append");
-				primaryLoc = ofh.getNextLocation(ChunkHandle); 
-				
 				
 			}	
 		}
@@ -190,10 +190,11 @@ public class ClientRec {
 		}
 		String ChunkHandle = RecordID.ChunkHandle;
 		byte[] CHinBytes = ChunkHandle.getBytes();
-		Location primaryLoc = ofh.getPrimaryLocation();
-		
-		while(primaryLoc != null) {
+
+		Vector<Location> Locations = ofh.getLocations();
+		for(int i = 0; i < Locations.size(); i++) {
 			try {
+				Location primaryLoc = Locations.get(i);
 				Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 				ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 				WriteOutputCS.flush();
@@ -228,7 +229,6 @@ public class ClientRec {
 
 				e.printStackTrace();
 				System.out.println("Moving to next ChunkServer: Delete");
-				primaryLoc = ofh.getNextLocation(ChunkHandle);
 			}	
 		}
 		
@@ -252,18 +252,19 @@ public class ClientRec {
 		Vector<String> ChunkHandles = ofh.getChunkHandles();
 		String ChunkHandle = "";
 		byte[] CHinBytes;
-		Location primaryLoc = ofh.getPrimaryLocation();
 		RID RecordID;
 		byte [] payload;
-		while(primaryLoc != null) {
+		Vector<Location> Locations = ofh.getLocations();
+		for(int i = 0; i < Locations.size(); i++) {
 			try {
+				Location primaryLoc = Locations.get(i);
 				Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 				ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 				ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 				int index = 0;
-				for(int i = 0; i < ChunkHandles.size(); i++)
+				for(int j = 0; j < ChunkHandles.size(); j++)
 				{
-					ChunkHandle = ChunkHandles.elementAt(i);
+					ChunkHandle = ChunkHandles.elementAt(j);
 					CHinBytes = ChunkHandle.getBytes();
 					//WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
 					WriteOutputCS.writeInt(ClientInstance.ReadFirstRecord);
@@ -302,7 +303,6 @@ public class ClientRec {
 
 				e.printStackTrace();
 				System.out.println("Moving to next ChunkServer: readfirst");
-				primaryLoc = ofh.getNextLocation(ChunkHandle);
 			
 			}	
 		}
@@ -323,18 +323,19 @@ public class ClientRec {
 		Vector<String> ChunkHandles = ofh.getChunkHandles();
 		String ChunkHandle = "";
 		byte[] CHinBytes;
-		Location primaryLoc = ofh.getPrimaryLocation();
 		RID RecordID;
 		byte [] payload;
-		while(primaryLoc != null) {
+		Vector<Location> Locations = ofh.getLocations();
+		for(int i = 0; i < Locations.size(); i++) {
 			try {
+				Location primaryLoc = Locations.get(i);
 				Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 				ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 				WriteOutputCS.flush();
 				ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 				
-				for(int i = ChunkHandles.size()-1; i >= 0; i--){
-					ChunkHandle = ChunkHandles.elementAt(i);
+				for(int j = ChunkHandles.size()-1; j >= 0; j--){
+					ChunkHandle = ChunkHandles.elementAt(j);
 					CHinBytes = ChunkHandle.getBytes();
 					
 					//WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
@@ -374,7 +375,6 @@ public class ClientRec {
 
 				e.printStackTrace();
 				System.out.println("Moving to next ChunkServer: readlast");
-				primaryLoc = ofh.getNextLocation(ChunkHandle);
 			}	
 		}
 		return FSReturnVals.Fail;
@@ -406,21 +406,23 @@ public class ClientRec {
 		int indexOfChunkHandle = ofh.ChunkHandles.indexOf(pivot.ChunkHandle);
 		String ChunkHandle = "";
 		byte[] CHinBytes;
-		Location primaryLoc = ofh.getPrimaryLocation();
 		RID RecordID;
 		byte [] payload;
 		int index = pivot.index + 1;
-		while(primaryLoc != null) {
+		Vector<Location> Locations = ofh.getLocations();
+		for(int i = 0; i < Locations.size(); i++) {
 			try {
+				Location primaryLoc = Locations.get(i);
+
 				Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 				ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 				ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 				
-				for(int i = indexOfChunkHandle; i < ChunkHandles.size(); i++) {
+				for(int j = indexOfChunkHandle; j < ChunkHandles.size(); j++) {
 					//WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
-					ChunkHandle = ChunkHandles.get(i);
+					ChunkHandle = ChunkHandles.get(j);
 					CHinBytes = ChunkHandle.getBytes();
-					if(i != indexOfChunkHandle)
+					if(j != indexOfChunkHandle)
 					{
 						index = 0;
 					}
@@ -465,7 +467,6 @@ public class ClientRec {
 
 				e.printStackTrace();
 				System.out.println("Moving to next ChunkServer: readnext");
-				primaryLoc = ofh.getNextLocation(ChunkHandle);
 			}
 			return FSReturnVals.RecDoesNotExist;
 			
@@ -495,7 +496,6 @@ public class ClientRec {
 		int indexOfChunkHandle = ofh.ChunkHandles.indexOf(pivot.ChunkHandle);
 		String ChunkHandle = "";
 		byte[] CHinBytes;
-		Location primaryLoc = ofh.getPrimaryLocation();
 		RID RecordID;
 		byte [] payload;
 		int index = pivot.index - 1;
@@ -503,17 +503,20 @@ public class ClientRec {
 		{
 			indexOfChunkHandle--;
 		}
-		while(primaryLoc != null) {
+		Vector<Location> Locations = ofh.getLocations();
+		for(int i = 0; i < Locations.size(); i++) {
 			try {
+				Location primaryLoc = Locations.get(i);
+
 				Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 				ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 				WriteOutputCS.flush();
 				ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 				
-				for(int i = indexOfChunkHandle; i >= 0; i--) {
-					ChunkHandle = ChunkHandles.get(i);
+				for(int j = indexOfChunkHandle; j >= 0; j--) {
+					ChunkHandle = ChunkHandles.get(j);
 					CHinBytes = ChunkHandle.getBytes();
-					if(i != indexOfChunkHandle)
+					if(j != indexOfChunkHandle)
 					{
 						index = -1;
 					}
@@ -556,13 +559,44 @@ public class ClientRec {
 
 				e.printStackTrace();
 				System.out.println("Moving to next ChunkServer: readlast");
-				primaryLoc = ofh.getNextLocation(ChunkHandle);
 			}
 		}
 		return FSReturnVals.Fail;
 
 	}
-
-
+	
+	public Vector<Location> getNewLocations()
+	{
+		try {
+			BufferedReader binput = new BufferedReader(new FileReader(TFSMaster.MasterConfigFile));
+			String portAndIP = binput.readLine();
+			StringTokenizer str = new StringTokenizer(portAndIP,":");
+			String masterIP = str.nextToken();//get the master's ip addres
+			int ServerPort = Integer.parseInt(str.nextToken());//get the port that master listeningon
+			
+			//port = port.substring( port.indexOf(':')+1 );
+			//ServerPort = Integer.parseInt(port);
+			Socket ClientSocket = new Socket(masterIP,ServerPort);//should client be reading from config?
+			
+			ObjectOutputStream WriteOutput = new ObjectOutputStream(ClientSocket.getOutputStream());
+			ObjectInputStream ReadInput = new ObjectInputStream(ClientSocket.getInputStream());
+			WriteOutput.writeObject("clientFS");
+			WriteOutput.flush();
+			WriteOutput.writeObject("getNewDirs");
+			WriteOutput.flush();
+			Vector<Location> newLocations = (Vector<Location>)ReadInput.readObject();
+			return newLocations;
+		}
+		catch(ClassNotFoundException cnfe)
+		{
+			cnfe.printStackTrace();
+		}
+		catch (FileNotFoundException e) {
+			System.out.println("Error (Client), the config file "+ TFSMaster.MasterConfigFile +" containing the port of the ChunkServer is missing.");
+		}catch (IOException e) {
+			System.out.println("Can't find file.");
+		}
+		return null;
+	}
 	
 }
