@@ -1,6 +1,8 @@
 package master;
 
-public class Location {
+import java.io.Serializable;
+
+public class Location implements Serializable{
 
 	public String IPAddress;
 	public int port;

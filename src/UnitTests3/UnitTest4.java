@@ -42,6 +42,7 @@ public class UnitTest4 {
 		
 		System.out.println(TestName + "Construct a record with the first four bytes equal to i, followed with 5 char attributes each with length 20.");
 		for (int i = 0; i < NumRecs; i++){
+			
 			payload = new byte[104];
 			byte[] ValInBytes = ByteBuffer.allocate(intSize).putInt(i).array();
 			System.arraycopy(ValInBytes, 0, payload, 0, intSize);
@@ -50,6 +51,7 @@ public class UnitTest4 {
 			}
 			RID rid = new RID();
 			crec.AppendRecord(fh, payload, rid);
+			System.out.println("Constructed Record:"+ i);
 		}
 		fsrv = cfs.CloseFile(fh);
 		

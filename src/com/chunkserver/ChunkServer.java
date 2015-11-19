@@ -173,6 +173,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		{
 			//upon connection, the master will ask for the chunks this CS has
 			String requestForChunks = (String) ReadInput.readObject();
+			System.out.println(requestForChunks);
 			File dir = new File(filePath);
 			File[] fs = dir.listFiles(); 
 			if (fs.length == 0)//if there are no chunks in this CS
@@ -200,6 +201,8 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			//get a list of deleted chunks and process the deletes
 			Vector<String> deletedChunks = (Vector<String>) ReadInput.readObject();
 			deleteFiles(deletedChunks);
+			WriteOutput.writeObject("confirmed_delete");
+			WriteOutput.flush();
 			
 		}
 		catch (IOException ioe){

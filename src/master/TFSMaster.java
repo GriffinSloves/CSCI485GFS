@@ -536,7 +536,7 @@ public class TFSMaster{
 			try {
 				//wait for connector to tell what type
 				String type = (String) ois.readObject();
-				//System.out.println(type);
+				System.out.println(type + " connected to master.");
 				
 				if (type.equals("clientFS"))
 				{
@@ -641,9 +641,7 @@ public class TFSMaster{
 		public void chunkserverRun()
 		{
 			while (true){
-				//finds out what chunks the chunk server has, updates the namespace and metadata
-				//sends back the array of deleted chunkHandles for the CS to process
-				sendHeartBeatMessage();
+				
 				
 				try {
 					//sleep for a minute
@@ -652,6 +650,10 @@ public class TFSMaster{
 				catch (InterruptedException ie){
 					ie.printStackTrace();
 				}
+				
+				//finds out what chunks the chunk server has, updates the namespace and metadata
+				//sends back the array of deleted chunkHandles for the CS to process
+				sendHeartBeatMessage();
 			}
 		}
 		
@@ -703,7 +705,7 @@ public class TFSMaster{
 				}
 				oos.writeObject(filesThatHaveBeenDeleted);
 				String confirmation = (String) ois.readObject();
-				if (confirmation.equals("confirmed_delete")){
+				if (!confirmation.equals("confirmed_delete")){
 					System.out.println("Error in CS processeing deleted files");
 				}
 				filesThatHaveBeenDeleted = new Vector<String>();//reset the vector
@@ -732,7 +734,7 @@ public class TFSMaster{
 			//send all of them
 			else{
 				Iterator it = connectedServers.iterator();
-				initialLocations.addElement((Location)it);//add the first in case there's just one
+				initialLocations.addElement((Location)it.next());//add the first in case there's just one
 				while (it.hasNext())//add the rest
 				{
 					it = (Iterator)it.next();
