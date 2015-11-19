@@ -727,8 +727,7 @@ public class TFSMaster{
 				Iterator it = connectedServers.iterator();
 				for (int i = 0; i < 3; i++)
 				{
-					initialLocations.addElement((Location)it);
-					it = (Iterator)it.next();
+					initialLocations.addElement((Location)it.next());
 				}
 			}
 			//if there are less than three connected Chunkservers
@@ -738,8 +737,7 @@ public class TFSMaster{
 				initialLocations.addElement((Location)it.next());//add the first in case there's just one
 				while (it.hasNext())//add the rest
 				{
-					it = (Iterator)it.next();
-					initialLocations.addElement((Location)it);
+					initialLocations.addElement((Location)it.next());
 				}
 			}
 			

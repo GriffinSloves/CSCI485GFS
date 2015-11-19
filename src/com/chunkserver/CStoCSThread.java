@@ -50,7 +50,6 @@ public class CStoCSThread extends Thread
 				//Use the existing input and output stream as long as the client is connected
 				while (!CSConnection.isClosed()) {
 					CMD = ChunkServer.ReadIntFromInputStream("CStoCS0", ReadInput);
-					System.out.println("CS CMD: " + CMD);
 					switch (CMD){
 					case CreateChunkCMD:
 						String chunkhandle = cs.createChunk();
