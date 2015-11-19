@@ -71,7 +71,6 @@ public class ClientInstance extends Thread
 					{
 						currLoc = (Location)ReadInput.readObject();
 						Locations = (Vector<Location>)ReadInput.readObject();
-						System.out.println("ClientInstance.CreateChunkCMD. Locations.size: " + Locations.size());
 						for(int i = 0; i < Locations.size(); i++)
 						{
 							Location nextLoc = Locations.elementAt(i);

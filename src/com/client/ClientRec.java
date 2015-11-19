@@ -92,6 +92,8 @@ public class ClientRec {
 		for(int i = 0; i < Locations.size(); i++) {
 			try {
 				Location primaryLoc = Locations.get(i);
+				//System.out.println("IP: " + primaryLoc.IPAddress);
+				//System.out.println("Port: " + primaryLoc.port);
 				Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 				ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 				WriteOutputCS.flush();

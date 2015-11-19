@@ -21,7 +21,7 @@ public class StartServersAndUnitTest
 		//UnitTest3.main(args);
 		//UnitTest4.main(args);
 		//UnitTest5.main(args);
-		try
+		/*try
 		{
 			UnitTest6.main(args);
 		}
@@ -29,6 +29,6 @@ public class StartServersAndUnitTest
 		{
 			System.out.println(e.getMessage());
 			e.printStackTrace();
-		}
+		}*/
 	}
 }

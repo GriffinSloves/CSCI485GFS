@@ -104,6 +104,8 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 
 			setUpConfigFile(ss);
 			connectToMaster();
+			CSToMasterConnection csmc = new CSToMasterConnection(this, MasterConnection, ReadInput, WriteOutput);
+			csmc.start();
 		}
 		catch(IOException ex)
 		{
@@ -125,13 +127,13 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			
 			String portAndIP = br.readLine();
 			StringTokenizer str = new StringTokenizer(portAndIP,":");
-			this.MasterIPAddress = str.nextToken();//get the master's ip address
-			this.MasterPort = Integer.parseInt(str.nextToken());//get the master's port as int
+			MasterIPAddress = str.nextToken();//get the master's ip address
+			MasterPort = Integer.parseInt(str.nextToken());//get the master's port as int
 			
-			this.MasterConnection = new Socket(MasterIPAddress,MasterPort);
-			this.WriteOutput = new ObjectOutputStream(MasterConnection.getOutputStream());
+			MasterConnection = new Socket(MasterIPAddress,MasterPort);
+			WriteOutput = new ObjectOutputStream(MasterConnection.getOutputStream());
 			WriteOutput.flush();
-			this.ReadInput = new ObjectInputStream(MasterConnection.getInputStream());
+			ReadInput = new ObjectInputStream(MasterConnection.getInputStream());
 			
 			//tell the master that this is a chunkserver
 			WriteOutput.writeObject("chunkserver");
@@ -139,13 +141,13 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			
 			//tell the master this Chunkserver's IP address
 			String IPAddress = InetAddress.getLocalHost().getHostAddress();
+			//System.out.println("IPAddress in chunkServer: " + IPAddress);
 			WriteOutput.writeObject(IPAddress);
 			WriteOutput.flush();
 			//tell the master the Chunkserver's port that it is listening on
 			WriteOutput.writeInt(portNum);
 			WriteOutput.flush();
-			
-			//sendChunkInfoToMaster();
+			//System.out.println("Before we send chunks to master");
 					
 		} catch (FileNotFoundException e) {
 			System.out.println("FNFE while CS connecting to master");
@@ -156,53 +158,6 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		}
 	}
 	
-	public void sendChunkInfoToMaster()
-	{
-		try
-		{
-			//upon connection, the master will ask for the chunks this CS has
-			String requestForChunks = (String) ReadInput.readObject();
-			System.out.println(requestForChunks);
-			File dir = new File(filePath);
-			File[] fs = dir.listFiles(); 
-			if (fs.length == 0)//if there are no chunks in this CS
-			{
-				WriteOutput.writeObject("no chunks");
-				WriteOutput.flush();
-				return;
-			}
-			else {
-				WriteOutput.writeObject("chunks coming");//if there are chunks just send nothing
-				WriteOutput.flush();
-			}
-			//Create an array of the filenames and send it to master
-			String[] chunkHandles = new String[fs.length];
-			for (int i = 0; i< chunkHandles.length; i++)
-			{
-				String handle = fs[i].getName();
-				System.out.println(handle);
-				chunkHandles[i] = handle;
-			}
-			//send the array to master
-			WriteOutput.writeObject(chunkHandles);
-			WriteOutput.flush();
-			
-			//get a list of deleted chunks and process the deletes
-			Vector<String> deletedChunks = (Vector<String>) ReadInput.readObject();
-			deleteFiles(deletedChunks);
-			WriteOutput.writeObject("confirmed_delete");
-			WriteOutput.flush();
-			
-		}
-		catch (IOException ioe){
-			System.out.println("IOException in sendChunkInfoToMaster");
-			ioe.printStackTrace();
-		}
-		catch (ClassNotFoundException cnfe){
-			System.out.println("CNFException in sendChunkInfoToMaster");
-			cnfe.printStackTrace();
-		}
-	}
 	
 	public void setUpConfigFile(ServerSocket ss){
 		try{
@@ -211,7 +166,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	
 			String masterIP = InetAddress.getLocalHost().getHostAddress();
 
-			this.portNum = ss.getLocalPort();
+			portNum = ss.getLocalPort();
 			
 			bw.write(masterIP+":"+portNum+System.getProperty("line.separator"));
 			bw.flush();
@@ -258,9 +213,14 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 				{
 					System.out.println("ss is null");
 				}
+				//System.out.println("Waiting for client");
+				//System.out.println(InetAddress.getLocalHost().getHostAddress());
+				//System.out.println(ss.getLocalPort());
 				Socket s = ss.accept(); //Blocking
-				ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+				//System.out.println("Accepted client");
 				ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+				//reverse these two
+				ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
 				int code = ois.readInt();
 				if(code == 100)
 				{
@@ -697,11 +657,12 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 		private Socket MasterConnection;
 		private ObjectOutputStream WriteOutput;
 		private ObjectInputStream ReadInput;
-		public CSToMasterConnection(ChunkServer cs)
+		public CSToMasterConnection(ChunkServer cs, Socket s, ObjectInputStream ois, ObjectOutputStream oos)
 		{
 			this.cs = cs;
-			cs.ReadInput = this.ReadInput;
-			cs.WriteOutput=this.WriteOutput;
+			this.MasterConnection = s;
+			this.ReadInput = ois;
+			this.WriteOutput = oos;
 		}
 		
 		public void run()
@@ -711,6 +672,55 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 				sendChunkInfoToMaster();
 			}
 		}
+		public void sendChunkInfoToMaster()
+		{
+			try
+			{
+				//upon connection, the master will ask for the chunks this CS has
+				//System.out.println("Waiting for heartbeat");
+				String requestForChunks = (String) ReadInput.readObject();
+				//System.out.println(requestForChunks);
+				File dir = new File(filePath);
+				File[] fs = dir.listFiles(); 
+				if (fs.length == 0)//if there are no chunks in this CS
+				{
+					WriteOutput.writeObject("no chunks");
+					WriteOutput.flush();
+					return;
+				}
+				else {
+					WriteOutput.writeObject("chunks coming");//if there are chunks just send nothing
+					WriteOutput.flush();
+				}
+				//Create an array of the filenames and send it to master
+				String[] chunkHandles = new String[fs.length];
+				for (int i = 0; i< chunkHandles.length; i++)
+				{
+					String handle = fs[i].getName();
+					//System.out.println(handle);
+					chunkHandles[i] = handle;
+				}
+				//send the array to master
+				WriteOutput.writeObject(chunkHandles);
+				WriteOutput.flush();
+				
+				//get a list of deleted chunks and process the deletes
+				Vector<String> deletedChunks = (Vector<String>) ReadInput.readObject();
+				deleteFiles(deletedChunks);
+				WriteOutput.writeObject("confirmed_delete");
+				WriteOutput.flush();
+				System.out.println("Heartbeat Message complete");
+			}
+			catch (IOException ioe){
+				System.out.println("IOException in sendChunkInfoToMaster");
+				ioe.printStackTrace();
+			}
+			catch (ClassNotFoundException cnfe){
+				System.out.println("CNFException in sendChunkInfoToMaster");
+				cnfe.printStackTrace();
+			}
+		}
+		
 	}
 	
 	public class RenewLeaseThread extends Thread
