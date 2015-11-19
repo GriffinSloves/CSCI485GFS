@@ -98,13 +98,14 @@ public class ClientRec {
 				WriteOutputCS.flush();
 				ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 				
-				WriteOutputCS.writeInt(100);
+				WriteOutputCS.writeInt(100); //tells chunkserver this is a client
 				
 				if(ofh.getNewChunk())
 				{
 					System.out.println("Client rec is attempting to createChunk");
 					WriteOutputCS.writeInt(ChunkServer.CreateChunkCMD);
 					WriteOutputCS.flush();
+					WriteOutputCS.writeObject(primaryLoc);
 					WriteOutputCS.writeObject(Locations);
 					WriteOutputCS.flush();
 					size = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
@@ -126,6 +127,7 @@ public class ClientRec {
 				WriteOutputCS.writeInt(CHinBytes.length);
 				WriteOutputCS.write(CHinBytes); //ChunkHandle
 				WriteOutputCS.flush();
+				WriteOutputCS.writeObject(primaryLoc);
 				WriteOutputCS.writeObject(Locations);
 				WriteOutputCS.flush();
 				int index = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
@@ -194,11 +196,17 @@ public class ClientRec {
 				WriteOutputCS.flush();
 				ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 				
+				WriteOutputCS.writeInt(100); //Tells chunkserver that this is a client
+				
 			//	WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
 				WriteOutputCS.writeInt(ClientInstance.DeleteRecord);
 				WriteOutputCS.writeInt(RecordID.index);
 				WriteOutputCS.writeInt(CHinBytes.length);
 				WriteOutputCS.write(CHinBytes);
+				WriteOutputCS.flush();
+				
+				WriteOutputCS.writeObject(primaryLoc);
+				WriteOutputCS.writeObject(Locations);
 				WriteOutputCS.flush();
 				
 				int response = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);
@@ -262,7 +270,9 @@ public class ClientRec {
 					ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 					ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 					int index = 0;
-					//WriteOutputCS.writeInt(ChunkServer.PayloadSZ + ChunkServer.CMDlength + (2*4) + CHinBytes.length);
+					
+					WriteOutputCS.writeInt(100);
+					
 					WriteOutputCS.writeInt(ClientInstance.ReadFirstRecord);
 					
 					WriteOutputCS.writeInt(CHinBytes.length);
