@@ -10,7 +10,9 @@ public class FileHandle {
 	
 	String filePath;
 	Vector<String> ChunkHandles; //array of all chunk handles that constitute the file
-	HashMap<String, Vector<Location>> ChunkLocations; //map of chunk handles to all their locations
+	HashMap<String, Vector<Location>> ChunkLocations;
+	boolean newChunk = true;
+
 	
 	public FileHandle(){}
 	
@@ -43,6 +45,15 @@ public class FileHandle {
 		return ChunkLocations;
 	}
 	
+	public void setNewChunk(boolean newChunk)
+	{
+		this.newChunk = newChunk;
+	}
+	
+	public boolean getNewChunk()
+	{
+		return newChunk;
+	}
 
 	
 }
