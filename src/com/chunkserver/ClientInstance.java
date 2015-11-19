@@ -51,6 +51,7 @@ public class ClientInstance extends Thread
 			byte[] CHinBytes;
 			byte[] payload;
 			RID rid;
+			String ChunkHandle;
 			int CMD = 0;
 			//Use the existing input and output stream as long as the client is connected
 			while (!ClientConnection.isClosed() && CMD != CloseSockets) {
@@ -62,26 +63,6 @@ public class ClientInstance extends Thread
 					byte[] CHinbytes = chunkhandle.getBytes();
 					WriteOutput.writeInt(CHinbytes.length);
 					WriteOutput.write(CHinbytes);
-					WriteOutput.flush();
-					break;
-
-				case ReadChunkCMD:
-					offset =  ChunkServer.ReadIntFromInputStream("ClientInstance1", ReadInput);
-					payloadlength =  ChunkServer.ReadIntFromInputStream("ClientInstance2", ReadInput);
-					chunkhandlesize = 1;
-					if (chunkhandlesize < 0)
-						System.out.println("Error in ChunkServer.java, ReadChunkCMD has wrong size.");
-					CHinBytes = ChunkServer.RecvPayload("ChunkServer", ReadInput, chunkhandlesize);
-					String ChunkHandle = (new String(CHinBytes)).toString();
-					
-					payload = cs.readChunk(ChunkHandle, offset, payloadlength);
-					
-					if (payload == null)
-						WriteOutput.writeInt(ChunkServer.PayloadSZ);
-					else {
-						WriteOutput.writeInt(ChunkServer.PayloadSZ + payload.length);
-						WriteOutput.write(payload);
-					}
 					WriteOutput.flush();
 					break;
 

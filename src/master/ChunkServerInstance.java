@@ -53,6 +53,7 @@ public class ChunkServerInstance extends Thread
 	
 	public void run()
 	{
+		/*
 		try
 		{
 			int code;
@@ -105,6 +106,6 @@ public class ChunkServerInstance extends Thread
 				fex.printStackTrace();
 			}
 		}
-	}
+	}*/
 	
 }

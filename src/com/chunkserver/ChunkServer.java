@@ -268,8 +268,20 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 				}
 				Socket s = ss.accept(); //Blocking
 				//System.out.println("ChunkServer accepted socket");
-				ClientInstance ci = new ClientInstance(this, s);
-				ci.start();
+				ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
+				int code = ois.readInt();
+				if(code == 100)
+				{
+					//ois.close();
+					ClientInstance ci = new ClientInstance(this, s);
+					ci.start();
+				}
+				else if(code == 200)
+				{
+					CStoCSThread cst = new CStoCSThread(this, s);
+					cst.start();
+				}
+				
 				//System.out.println("ChunkServer started ClientInstance");
 			}
 			
