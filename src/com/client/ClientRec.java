@@ -263,6 +263,7 @@ public class ClientRec {
 			ChunkHandle = ChunkHandles.elementAt(j);
 			Vector<Location> Locations = ChunksToLocations.get(ChunkHandle);
 			CHinBytes = ChunkHandle.getBytes();
+			System.out.println(Locations == null);
 			for(int i = 0; i < Locations.size() && !readFailed; i++) {
 				try {
 					Location primaryLoc = Locations.get(i);

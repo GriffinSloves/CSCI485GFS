@@ -51,7 +51,7 @@ public class UnitTest4 {
 			}
 			RID rid = new RID();
 			crec.AppendRecord(fh, payload, rid);
-			System.out.println("Constructed Record:"+ i);
+			//System.out.println("Constructed Record:"+ i);
 		}
 		fsrv = cfs.CloseFile(fh);
 		

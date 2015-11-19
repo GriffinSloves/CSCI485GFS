@@ -14,7 +14,10 @@ public class FileHandle {
 	boolean newChunk = true;
 
 	
-	public FileHandle(){}
+	public FileHandle(){
+		ChunkHandles = new Vector<String>();
+		ChunkLocations = new HashMap<String, Vector<Location>>();
+	}
 	
 	public void setFilePath(String path)
 	{

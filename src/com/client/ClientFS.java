@@ -414,6 +414,9 @@ public class ClientFS {
 			WriteOutput.flush();
 			System.out.println("Sent chunks of: "+filePath);
 			
+			WriteOutput.writeObject(ofh.ChunkLocations);
+			WriteOutput.flush();
+			
 			String response = (String) ReadInput.readObject();
 			if (response.equals("success")) return FSReturnVals.Success;
 				

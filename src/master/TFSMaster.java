@@ -1069,6 +1069,17 @@ public class TFSMaster{
 				filesToChunkHandles.put(filePath, chunksOfFile);
 				System.out.println("Updated "+filePath+" mapping from master.");
 				
+				//iterate through this and add it to master's namespace
+				HashMap<String,Vector<Location>> locationsOfChunks = (HashMap<String,Vector<Location>>)ois.readObject();
+				Iterator it = locationsOfChunks.entrySet().iterator();
+				while (it.hasNext())
+				{
+					HashMap.Entry pair = (HashMap.Entry)it.next();
+					if (!chunkHandlesToServers.containsKey(pair.getKey())){
+						chunkHandlesToServers.put((String)pair.getKey(), (Vector<Location>)pair.getValue());
+					}
+				}
+				
 				oos.writeObject("success");
 				oos.flush();
 				
