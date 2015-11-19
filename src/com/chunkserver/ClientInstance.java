@@ -59,7 +59,6 @@ public class ClientInstance extends Thread
 			Location currLoc;
 			Vector<Location> Locations;
 			int success;
-			Vector<Location> failedLocs = new Vector<Location>();
 			//Use the existing input and output stream as long as the client is connected
 			while (!ClientConnection.isClosed() && CMD != CloseSockets) {
 				CMD = ChunkServer.ReadIntFromInputStream("ClientInstance0", ReadInput);
@@ -84,10 +83,7 @@ public class ClientInstance extends Thread
 								WriteOutputCS.writeInt(ChunkServer.CreateChunkCMD);
 								WriteOutputCS.flush();
 								success = ReadInputCS.readInt();
-								if(success != 1)
-								{
-									failedLocs.addElement(nextLoc);
-								}
+							
 							}
 							
 						}
