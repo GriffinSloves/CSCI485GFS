@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
@@ -205,6 +206,44 @@ public class TFSMaster{
 		readFilesToChunks();
 		//readChunksToLocations();
 	}
+	
+	public void writeFilesToChunksPersistently()
+	{
+		try {
+			if (filesToChunkHandles.size() == 0) return;
+			
+			File tempFilesToChunks = new File("temp_file2chunk.txt");
+			FileWriter fw = new FileWriter(tempFilesToChunks,true);
+			BufferedWriter br = new BufferedWriter(fw);
+			
+			for (String key: filesToChunkHandles.keySet()){
+				String filename = key;
+				Vector<String> chunkHandles = filesToChunkHandles.get(filename);
+				
+				String handlesString = "";
+				for (int i = 0; i < chunkHandles.size(); i++)
+				{
+					handlesString += chunkHandles.elementAt(i) + ":";
+				}
+				
+				String lineToWriteToFile = key+":"+handlesString;
+				//should write to file in format "file.txt:chunk1:chunk2:chunk3...
+				br.write(lineToWriteToFile + System.getProperty("line.separator"));
+			}
+			
+			File oldFilesToChunks = new File(filesToChunkHandlesFile);
+			oldFilesToChunks.delete();//delete the old file
+			boolean success = tempFilesToChunks.renameTo(oldFilesToChunks);//set this new version
+			if (!success){
+				System.out.println("Unsuccessful writing out filesToChunkHandles");
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public void applyLog()
 	{
 		if (logSize < 30)return;//don't do anything if the log not at 30 lines yet
@@ -244,6 +283,10 @@ public class TFSMaster{
 				}
 				logLine = br.readLine();//read each line of the log
 			}		
+			
+			//each time log is flushed also write out filesToChunks persistenly
+			writeFilesToChunksPersistently();
+			
 		} catch (FileNotFoundException e) {
 			System.out.println("FNFE: Error reading MasterConfig to find current log");
 			e.printStackTrace();

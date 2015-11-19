@@ -41,6 +41,14 @@ public class UnitTest1 {
 		
 		String[] ret1 = cfs.ListDir("/" + dir1);//ADDED Last /
 		
+		/*for (int i = 0; i< ret1.length; i++){
+			System.out.println(ret1[i]);
+		}
+		System.out.println();
+		for (int i = 0; i< gen1.length; i++){
+			System.out.println(gen1[i]);
+		}*/
+		
 		boolean compare1 = compareArrays(gen1, ret1);
 		if(compare1 == false){
 			System.out.println("Unit test 1 result: fail! - 3");
