@@ -674,6 +674,7 @@ public class TFSMaster{
 					return;
 				}
 				//update the metadata
+				System.out.println("Writing hearbeat message");
 				for (int i = 0; i < chunkHandles.length; i++)
 				{
 					//check first if the chunkhandle already exists, on some other CS
@@ -1075,7 +1076,6 @@ public class TFSMaster{
 				while (it.hasNext())
 				{
 					HashMap.Entry pair = (HashMap.Entry)it.next();
-					System.out.println(pair.getKey() + ":");
 					if (!chunkHandlesToServers.containsKey(pair.getKey())){
 						chunkHandlesToServers.put((String)pair.getKey(), (Vector<Location>)pair.getValue());
 					}

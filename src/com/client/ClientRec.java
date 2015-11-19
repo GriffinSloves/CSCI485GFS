@@ -92,7 +92,6 @@ public class ClientRec {
 		for(int i = 0; i < Locations.size(); i++) {
 			try {
 				Location primaryLoc = Locations.get(i);
-				//System.out.println("primaryLoc: " + primaryLoc.IPAddress + " - " + primaryLoc.port);
 				Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 				ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 				WriteOutputCS.flush();
@@ -100,7 +99,6 @@ public class ClientRec {
 				WriteOutputCS.writeInt(100); //tells chunkserver this is a client
 				if(ofh.getNewChunk())
 				{
-					System.out.println("Client rec is attempting to createChunk");
 					WriteOutputCS.writeInt(ChunkServer.CreateChunkCMD);
 					WriteOutputCS.flush();
 					WriteOutputCS.writeObject(primaryLoc);
@@ -294,7 +292,6 @@ public class ClientRec {
 						ReadInputCS.close();
 						WriteOutputCS.close();
 						CSConnection.close();
-						System.out.println("Success reading first record");
 						return FSReturnVals.Success;
 					}
 					else
@@ -491,7 +488,6 @@ public class ClientRec {
 				}
 				
 			}
-			System.out.println("Moving to next chunk");
 		}
 		return FSReturnVals.Fail;
 		
