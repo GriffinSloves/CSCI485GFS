@@ -101,6 +101,7 @@ public class ClientRec {
 					ChunkHandle = new String(CHinBytes);
 					ChunkHandles.add(ChunkHandle);
 					ofh.setHandles(ChunkHandles);
+					
 				}
 				else
 				{
