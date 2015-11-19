@@ -112,7 +112,8 @@ public class ClientRec {
 					ChunkHandle = new String(CHinBytes);
 					ChunkHandles.add(ChunkHandle);
 					ofh.setHandles(ChunkHandles);
-					
+					HashMap<String, Vector<Location>> ChunksToLocations = ofh.getLocations();
+					ChunksToLocations.put(ChunkHandle, Locations);
 				}
 				else
 				{
