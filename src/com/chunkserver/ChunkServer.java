@@ -145,7 +145,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			WriteOutput.writeInt(portNum);
 			WriteOutput.flush();
 			
-			sendChunkInfoToMaster();
+			//sendChunkInfoToMaster();
 					
 		} catch (FileNotFoundException e) {
 			System.out.println("FNFE while CS connecting to master");
@@ -262,7 +262,6 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 				ObjectInputStream ois = new ObjectInputStream(s.getInputStream());
 				ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
 				int code = ois.readInt();
-				System.out.println("code: " + code);
 				if(code == 100)
 				{
 					ClientInstance ci = new ClientInstance(this, s, ois, oos);
