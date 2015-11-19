@@ -80,6 +80,7 @@ public class ClientInstance extends Thread
 								ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
 								WriteOutputCS.flush();
 								ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
+								WriteOutputCS.writeInt(200);
 								WriteOutputCS.writeInt(ChunkServer.CreateChunkCMD);
 								WriteOutputCS.flush();
 								success = ReadInputCS.readInt();

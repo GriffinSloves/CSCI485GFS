@@ -98,6 +98,8 @@ public class ClientRec {
 				WriteOutputCS.flush();
 				ObjectInputStream ReadInputCS = new ObjectInputStream(CSConnection.getInputStream());
 				
+				WriteOutputCS.writeInt(100);
+				
 				if(ofh.getNewChunk())
 				{
 					System.out.println("Client rec is attempting to createChunk");
