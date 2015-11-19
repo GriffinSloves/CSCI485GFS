@@ -368,8 +368,15 @@ public class ClientFS {
 			//load the list of chunks into filehandle object
 			Vector<String> chunksOfFile = (Vector<String>) ReadInput.readObject();
 			ofh.setHandles(chunksOfFile);
+			
 			HashMap<String, Vector<Location>> locationsOfChunks = (HashMap<String, Vector<Location>>) ReadInput.readObject();
 			ofh.setLocations(locationsOfChunks);
+			
+			//if both chunksOfFile and locationsOfChunks were empty
+			//master will send an arbitrary primary location
+			String onlyPopulatedIfNewfile = (String)ReadInput.readObject();
+			
+			//if not the first location will be chosen
 			Location TestLocation = new Location("127.0.0.1", 8000);
 			ofh.setPrimaryLocation(TestLocation);
 			

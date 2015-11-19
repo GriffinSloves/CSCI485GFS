@@ -93,7 +93,7 @@ public class ClientRec {
 				
 				if(ChunkHandles.isEmpty())
 				{
-					System.out.println("CLient rec is attempting to createChunk");
+					System.out.println("Client rec is attempting to createChunk");
 					WriteOutputCS.writeInt(ChunkServer.CreateChunkCMD);
 					WriteOutputCS.flush();
 					size = Client.ReadIntFromInputStream("ClientRec", ReadInputCS);

@@ -944,7 +944,7 @@ public class TFSMaster{
 				oos.writeObject(chunksOfFile);
 				oos.flush();
 				
-				//for each chunk, get its location -- IP address of chunkserver
+				//for each chunk, get its locations on chunkservers
 				//maps chunkHandles to all the locations of its replicas
 				HashMap<String, Vector<Location>> ChunkLocations = new HashMap<String, Vector<Location>>();
 				for (int i = 0; i < chunksOfFile.size(); i++)
@@ -953,9 +953,11 @@ public class TFSMaster{
 					ChunkLocations.put(chunksOfFile.elementAt(i), location);
 				}
 				
-				//if the file has never been opened / written before, it will not have any chunkServers
-				//master should assign it one arbitrarily
-				
+				//if the containers are is empty, the file has just been created
+				//master should arbitrarily allocate a chunkServer to the file
+				if (chunksOfFile.size() == 0 || ChunkLocations.size() == 0){
+					
+				}
 				
 				//send that array back to ClientFS to load into FileHandle object
 				oos.writeObject(ChunkLocations);
