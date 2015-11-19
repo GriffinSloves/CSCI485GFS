@@ -953,6 +953,10 @@ public class TFSMaster{
 					ChunkLocations.put(chunksOfFile.elementAt(i), location);
 				}
 				
+				//if the file has never been opened / written before, it will not have any chunkServers
+				//master should assign it one arbitrarily
+				
+				
 				//send that array back to ClientFS to load into FileHandle object
 				oos.writeObject(ChunkLocations);
 				oos.flush();
@@ -1028,6 +1032,7 @@ public class TFSMaster{
 					
 					//add the file to the namespace
 					namespace.add(tgtdir+fileName);
+					
 					Vector<String> emptyChunkVector = new Vector<String>();
 					filesToChunkHandles.put(tgtdir+fileName, emptyChunkVector);
 					
