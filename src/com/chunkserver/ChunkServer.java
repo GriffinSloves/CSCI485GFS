@@ -46,7 +46,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 	final static String filePath = "csci485/";	//or C:\\newfile.txt
 	public final static String ClientConfigFile = "ClientConfig.txt";
 	public final static String CSConfigFile = "CSConfig.txt";
-	public final static String MasterConfigFile = "MasterConfigFile.txt";
+	public final static String MasterConfigFile = "MasterConfig.txt";
 	//Used for the file system
 	public static long counter;
 	
@@ -153,7 +153,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			WriteOutput.writeObject(IPAddress);
 			WriteOutput.flush();
 			//tell the master the Chunkserver's port that it is listening on
-			WriteOutput.writeObject(portNum);
+			WriteOutput.writeInt(portNum);
 			WriteOutput.flush();
 			
 			sendChunkInfoToMaster();
@@ -179,6 +179,7 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			{
 				WriteOutput.writeObject("no chunks");
 				WriteOutput.flush();
+				return;
 			}
 			else {
 				WriteOutput.writeObject("chunks coming");//if there are chunks just send nothing
@@ -188,8 +189,8 @@ public class ChunkServer extends Thread implements ChunkServerInterface {
 			String[] chunkHandles = new String[fs.length];
 			for (int i = 0; i< chunkHandles.length; i++)
 			{
-				String handle = fs[i].getPath();
-				//System.out.println(handle);
+				String handle = fs[i].getName();
+				System.out.println(handle);
 				chunkHandles[i] = handle;
 			}
 			//send the array to master

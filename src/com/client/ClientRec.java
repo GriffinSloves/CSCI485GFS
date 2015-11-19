@@ -82,6 +82,7 @@ public class ClientRec {
 		while(primaryLoc != null) {
 			try {
 				//System.out.println("InCLientRec");
+				System.out.println("primaryLoc: " + primaryLoc.IPAddress + " - " + primaryLoc.port);
 				Socket CSConnection = new Socket(primaryLoc.IPAddress, primaryLoc.port);
 				//System.out.println("Opened up socket");
 				ObjectOutputStream WriteOutputCS = new ObjectOutputStream(CSConnection.getOutputStream());
@@ -159,6 +160,8 @@ public class ClientRec {
 			catch (IOException e) {
 				// Get new primary loc
 				// restart process
+				e.printStackTrace();
+				System.out.println("Moving to next ChunkServer: Append");
 				primaryLoc = ofh.getNextLocation(ChunkHandle); 
 				
 				
@@ -221,6 +224,9 @@ public class ClientRec {
 				
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
+
+				e.printStackTrace();
+				System.out.println("Moving to next ChunkServer: Delete");
 				primaryLoc = ofh.getNextLocation(ChunkHandle);
 			}	
 		}
@@ -292,6 +298,9 @@ public class ClientRec {
 				
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
+
+				e.printStackTrace();
+				System.out.println("Moving to next ChunkServer: readfirst");
 				primaryLoc = ofh.getNextLocation(ChunkHandle);
 			
 			}	
@@ -362,6 +371,8 @@ public class ClientRec {
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 
+				e.printStackTrace();
+				System.out.println("Moving to next ChunkServer: readlast");
 				primaryLoc = ofh.getNextLocation(ChunkHandle);
 			}	
 		}
@@ -450,6 +461,9 @@ public class ClientRec {
 			catch (IOException e) 
 			{
 				// TODO Auto-generated catch block
+
+				e.printStackTrace();
+				System.out.println("Moving to next ChunkServer: readnext");
 				primaryLoc = ofh.getNextLocation(ChunkHandle);
 			}
 			return FSReturnVals.RecDoesNotExist;
@@ -538,6 +552,9 @@ public class ClientRec {
 				
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
+
+				e.printStackTrace();
+				System.out.println("Moving to next ChunkServer: readlast");
 				primaryLoc = ofh.getNextLocation(ChunkHandle);
 			}
 		}

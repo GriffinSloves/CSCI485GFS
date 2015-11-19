@@ -16,12 +16,12 @@ public class StartServersAndUnitTest
 		
 		ChunkServer cs = new ChunkServer();
 		cs.start();
-		UnitTest1.main(args);
-		UnitTest2.main(args);
-		UnitTest3.main(args);
+		//UnitTest1.main(args);
+		//UnitTest2.main(args);
+		//UnitTest3.main(args);
 		UnitTest4.main(args);
-		UnitTest5.main(args);
-		try
+		//UnitTest5.main(args);
+		/*try
 		{
 			UnitTest6.main(args);
 		}
@@ -29,6 +29,6 @@ public class StartServersAndUnitTest
 		{
 			System.out.println(e.getMessage());
 			e.printStackTrace();
-		}
+		}*/
 	}
 }
