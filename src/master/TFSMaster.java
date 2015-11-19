@@ -578,6 +578,9 @@ public class TFSMaster{
 					if(command.equals("NameSpace")){
 						NameSpace();
 					}
+					if(command.equals("getInitialLocations")){
+						getInitialLocations();
+					}
 					
 				}
 			}
@@ -669,6 +672,42 @@ public class TFSMaster{
 			}
 			
 		}
+		
+		public void getInitialLocations(){
+			Vector<Location> initialLocations = new Vector<Location>();
+			//if there are three or more connected ChunkServers
+			//send an arbitrary group of 3
+			if (connectedServers.size()>= 3){
+				Iterator it = connectedServers.iterator();
+				for (int i = 0; i < 3; i++)
+				{
+					initialLocations.addElement((Location)it);
+					it = (Iterator)it.next();
+				}
+			}
+			//if there are less than three connected Chunkservers
+			//send all of them
+			else{
+				Iterator it = connectedServers.iterator();
+				initialLocations.addElement((Location)it);//add the first in case there's just one
+				while (it.hasNext())//add the rest
+				{
+					it = (Iterator)it.next();
+					initialLocations.addElement((Location)it);
+				}
+			}
+			
+			//send the vector array to the client
+			try {
+				oos.writeObject(initialLocations);
+				oos.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			
+			
+		}
+		
 		public void createDir() throws IOException, ClassNotFoundException
 		{
 			//check if the src doesn't exist
@@ -966,7 +1005,8 @@ public class TFSMaster{
 				e.printStackTrace();
 			} catch (IOException e) {
 				e.printStackTrace();
-			}		}
+			}		
+		}
 		public void closeFile()
 		{
 			try {

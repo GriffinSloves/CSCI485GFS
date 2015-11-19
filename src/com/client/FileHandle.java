@@ -10,7 +10,7 @@ public class FileHandle {
 	
 	String filePath;
 	Vector<String> ChunkHandles; //array of all chunk handles that constitute the file
-	HashMap<String, Vector<Location>> ChunkLocations;
+	HashMap<String, Vector<Location>> ChunkLocations; //map of chunk handles to all their locations
 	
 	public FileHandle(){}
 	
